@@ -1,2 +1,2 @@
-# About TI_Bot
-The control system of TKU ICLab Bot (8-DOF)
+# About AI_Bot
+The control system of AI Bot(8-DOF) made by TKU ICLab.
