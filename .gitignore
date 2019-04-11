@@ -1,0 +1,8 @@
+# root CMakeLists.txt
+/CMakeLists.txt
+
+
+*.pyc
+*.h5
+*.weights
+__pycache__
