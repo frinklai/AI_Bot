@@ -20,7 +20,7 @@ A Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelener/
 1. Change the path in /ros_yolo3/src/yolo3/scripts/path_set.py
 2. Download YOLOv3 weights from [YOLO website](http://pjreddie.com/darknet/yolo/).
 3. Convert the Darknet YOLO model to a Keras model.
-4. Run YOLO detection.
+4. Run YOLO detection. (roslaunch yolo_v3 object_detect.launch)
 
 ```
 wget https://pjreddie.com/media/files/yolov3.weights
