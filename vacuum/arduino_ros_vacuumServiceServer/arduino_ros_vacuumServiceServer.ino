@@ -1,3 +1,9 @@
+#include <MFRC522.h>
+#include <MFRC522Extended.h>
+#include <require_cpp11.h>
+#include <deprecated.h>
+
+
 #include <ros.h>
 #include <vacuum_cmd_msg/VacuumCmd.h>
 #include <std_msgs/Bool.h>
