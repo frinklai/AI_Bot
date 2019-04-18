@@ -1,7 +1,8 @@
 # root CMakeLists.txt
 /CMakeLists.txt
+weights
 
-
+*.jpg
 *.pyc
 *.h5
 *.weights
