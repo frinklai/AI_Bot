@@ -32,6 +32,7 @@ down            = 4
 up              = 5
 back_home       = 6
 wait_img_pos    = 7
+grasping        = 8
 
 objectName = ['lunchbox', 'lunchbox', 'lunchbox', 'lunchbox',
               'drink',    'drink',    'drink',    'drink',
@@ -133,11 +134,11 @@ class stockingTask:
             self.is_right = -1
             self.speed = SPEED_L
         self.init_pub_sub()
-        # if self.en_sim:
-        #     self.suction = SuctionTask(self.name + '_gazebo')
-        # else:
-        #     self.suction = SuctionTask(self.name)
-        #     rospy.on_shutdown(self.suction.gripper_vaccum_off)
+        if self.en_sim:
+            self.suction = SuctionTask(self.name + '_gazebo')
+        else:
+            self.suction = SuctionTask(self.name)
+            rospy.on_shutdown(self.suction.gripper_vaccum_off)
         
     @property
     def finish(self):
@@ -238,6 +239,7 @@ class stockingTask:
             return                                                 # must be include in your strategy
 
         if self.state == idle:
+            self.suction.gripper_vaccum_off()
             if self.finish:
                 return
 
@@ -246,6 +248,7 @@ class stockingTask:
             if self.arm.is_busy:
                 # if (self.nowState == leaveBin or self.nowState == frontSafetyPos or self.nowState == move2Shelf) and not self.suction.is_grip and not self.en_sim:
                 #     self.state = missObj
+                print('self.state == busy')
                 return
             else:
                 self.state    = self.nextState
@@ -287,10 +290,22 @@ class stockingTask:
         
         elif self.state == down:               # down
             print('self.state == down')
-            self.state = busy
-            self.nextState = up
+            self.suction.gripper_vaccum_on()
+            self.state = grasping
             self.pos   = [0, 0, -0.1]
             self.arm.relative_move_pose(mode='line', pos=self.pos)
+            rospy.sleep(.1)
+
+        elif self.state == grasping:
+            print('self.state == ready to grasping')
+            if self.suction.is_grip or self.en_sim:
+                print('self.state == grasping')
+                self.arm.clear_cmd()
+                self.state = busy
+                self.nextState = up
+                # self.reGripCnt = 0
+            # elif not self.arm.is_busy:
+            #     self.state = missObj
 
         elif self.state == up:               # up
             print('self.state == up')
@@ -299,8 +314,9 @@ class stockingTask:
             self.pos   = [0, 0, 0.1]
             self.arm.relative_move_pose(mode='line', pos=self.pos)
 
-        elif self.state == back_home:               # up
+        elif self.state == back_home:               # back_home
             print('self.state == back_home')
+            # self.suction.gripper_vaccum_off()
             self.state = busy
             self.nextState = idle
             self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
