@@ -10,14 +10,14 @@ from math import degrees
 import rospy
 from std_msgs.msg import Bool, Int32
 from arm_control import ArmTask, SuctionTask
-
-
+from yolo_v3.msg   import ROI_array  
+from yolo_v3.msg   import ROI  
 
 
 
 PICKORDER = 0
 SPEED_R     = 60
-SPEED_L     = 70
+SPEED_L     = 30
 LUNCHBOX_H = 0.045
 # The lesser one
 lunchQuan = 1              
@@ -31,26 +31,7 @@ goto            = 3
 down            = 4
 up              = 5
 back_home       = 6
-# frontSafetyPos  = 3
-# rearSafetyPos   = 4
-# move2Bin        = 5
-# move2Shelf      = 6
-# moveIn2Shelf    = 7
-# leaveBin        = 8
-# leaveShelf      = 9
-# move2Object     = 10
-# move2PlacedPos  = 11
-# pickObject      = 12
-# placeObject     = 13
-# safePose1       = 14
-# safePose2       = 15
-# safePose3       = 16 
-# riceballEuler   = 17
-# rearSafetyPos2  = 18
-# leavePlacePos   = 19
-# grasping        = 20
-# missObj         = 21
-# safePose4       = 22
+wait_img_pos    = 7
 
 objectName = ['lunchbox', 'lunchbox', 'lunchbox', 'lunchbox',
               'drink',    'drink',    'drink',    'drink',
@@ -131,6 +112,8 @@ class stockingTask:
             if sys.argv[1] == 'True':
                 rospy.set_param('self.en_sim', sys.argv[1])
                 self.en_sim = rospy.get_param('self.en_sim')
+        self.img_data = ROI()
+        self.img_data_list = []
         self.name = _name
         self.state = initPose
         self.nowState = initPose 
@@ -149,29 +132,19 @@ class stockingTask:
         if self.name == 'left':
             self.is_right = -1
             self.speed = SPEED_L
-        if self.en_sim:
-            self.suction = SuctionTask(self.name + '_gazebo')
-        else:
-            self.suction = SuctionTask(self.name)
-            rospy.on_shutdown(self.suction.gripper_vaccum_off)
+        self.init_pub_sub()
+        # if self.en_sim:
+        #     self.suction = SuctionTask(self.name + '_gazebo')
+        # else:
+        #     self.suction = SuctionTask(self.name)
+        #     rospy.on_shutdown(self.suction.gripper_vaccum_off)
         
     @property
     def finish(self):
         return self.pickList == self.pickListAll
 
-    # def setQuantity(self):
-    #     for index in range(lunchQuan):
-    #         objectName[index] = 'lunchboxXX'
-    #         lunchboxPos[index][1] *= -1
-    #         lunchboxPos[lunchQuan - index -1][2] += LUNCHBOX_H * index
-    #     for index in range(4 - lunchQuan):
-    #         lunchboxPos[4 - index -1][2] += LUNCHBOX_H * index
-    #         print LUNCHBOX_H * index
-    #     for index in range(drinkQuan):
-    #         objectName[index+4] = 'drinkXX'
-    #     for index in range(riceQuan):
-    #         objectName[index+8] = 'riceballXX'
-    #     print lunchboxPos
+    def init_pub_sub(self):
+        rospy.Subscriber('/object/ROI_array', ROI_array, self.get_obj_info_cb)
 
     def getRearSafetyPos(self):
         self.pos   = [0, -0.5*self.is_right, -0.5]
@@ -268,14 +241,6 @@ class stockingTask:
             if self.finish:
                 return
 
-        elif self.state == initPose:
-            print('self.state == initPose')
-            self.state = busy
-            self.nextState = goto
-            self.arm.set_speed(self.speed)
-            self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
-            # self.suction.gripper_suction_deg(0)
-
         elif self.state == busy:
             # print('self.state == busy')
             if self.arm.is_busy:
@@ -286,6 +251,32 @@ class stockingTask:
                 self.state    = self.nextState
                 self.nowState = self.nextState
                 return
+
+        elif self.state == initPose:
+            print('self.state == initPose')
+            self.state = busy
+            self.nextState = wait_img_pos
+            self.arm.set_speed(self.speed)
+            self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
+            # self.suction.gripper_suction_deg(0)
+
+        elif self.state == wait_img_pos:        # wait_img_pos
+            # print('self.state == wait_img_pos')
+            self.state = wait_img_pos
+            # print('len(self.img_data_list = ', len(self.img_data_list))
+            if(len(self.img_data_list)!=0):
+                for i in range(len(self.img_data_list)):
+                    if(i!=0):
+                        print("\n")
+                    print("----- stra detect object_" + str(i) + " ----- ")
+                    print("object_name = " + str(self.img_data.object_name))
+                    print("score = " + str(self.img_data.score))
+                    print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
+                    print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
+                    self.nextState = goto
+            else:
+                self.nextState = wait_img_pos
+            self.state = self.nextState
 
         elif self.state == goto:               # goto
             print('self.state == goto')
@@ -315,6 +306,25 @@ class stockingTask:
             self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
             self.arm.relative_move_pose(mode='line', pos=self.pos)
 
+    def get_obj_info_cb(self, data):
+        self.img_data = ROI()
+        self.img_data_list = data.ROI_list
+        # print("Detected object number = " + str(len(data.ROI_list)))
+        for i in range(len(data.ROI_list)):
+            self.img_data.object_name = data.ROI_list[i].object_name
+            self.img_data.score       = data.ROI_list[i].score
+            self.img_data.min_x = data.ROI_list[i].min_x
+            self.img_data.min_y = data.ROI_list[i].min_y
+            self.img_data.Max_x = data.ROI_list[i].Max_x
+            self.img_data.Max_y = data.ROI_list[i].Max_y
+            return self.img_data
+            # if(i!=0):
+            #     print("\n")
+            # print("----- object_" + str(i) + " ----- ")
+            # print("object_name = " + str(object_name))
+            # print("score = " + str(score))
+            # print("min_xy = [ " +  str(min_xy) +  " ]" )
+            # print("max_xy = [ " +  str(max_xy) +  " ]" )
 
 def start_callback(msg):
     global is_start
@@ -325,23 +335,12 @@ def start_callback(msg):
 if __name__ == '__main__':
     rospy.init_node('example')        # enable this node
 
-    is_start = False
-    rospy.Subscriber(
-        'scan_black/dualarm_start_1',
-        Int32,
-        start_callback,
-        queue_size=1
-    )
-    pub = rospy.Publisher(
-        'scan_black/strategy_behavior',
-        Int32,
-        queue_size=1
-    )
+    
 
     # right = stockingTask('right')      # Set up right arm controller
     left  = stockingTask('left')       # Set up left arm controller
     rospy.sleep(.3)
-    setQuantity()
+    # setQuantity()
 
     # while not rospy.is_shutdown() and not is_start:
     #     rospy.loginfo('waiting for start signal')
@@ -349,30 +348,14 @@ if __name__ == '__main__':
     
     # SuctionTask.switch_mode(True)
 
-    rate = rospy.Rate(30)  # 30hz
+    rate = rospy.Rate(50)  # 30hz
     
-    while not rospy.is_shutdown() and (not left.finish):
+    # while not rospy.is_shutdown() and (not left.finish):
+    while not rospy.is_shutdown():
         try:
             left.process()
-            rate.sleep()
         except rospy.ROSInterruptException:
             print('error')
             pass
             break
-
-    # robot arm back home
-    # if right.arm.is_stop is not True:
-    #     rospy.loginfo('back home')
-    #     left.arm.wait_busy()
-    #     left.arm.jointMove(0, (0, -1, 0, 2, 0, -0.7, 0))
-
-    #     right.arm.wait_busy()
-    #     right.arm.jointMove(0, (0, -1, 0, 2, 0, -0.7, 0))
-    
-    #     left.arm.wait_busy()
-    #     left.arm.jointMove(0, (0, 0, 0, 0, 0, 0, 0))
-
-    #     right.arm.wait_busy()
-    #     right.arm.jointMove(0, (0, 0, 0, 0, 0, 0, 0))
-
-    # SuctionTask.switch_mode(False)
+        rate.sleep()
