@@ -59,7 +59,7 @@ ros::Subscriber<std_msgs::Bool> armTask_sub("/arduino/mode", &armTaskCallback);
 DynamixelClass Dxl_right(Serial1);
 DynamixelClass Dxl_left(Serial3);
 
-bool armTask = false;
+bool armTask = true;
 int MaxPos;
 int MinPos;
 int MaxPos_right;
@@ -83,13 +83,13 @@ int addressMin_H_left = 15;
 int addressMax_L_left = 17;
 int addressMax_H_left = 19;
 
-const int is_grip_left  = 37;
-const int is_grip_right = 39;
+const int is_grip_left  = 44;
+const int is_grip_right = 50;
 const int is_stop       = 35;
 
 const int led_pin = 13;
-const int vac_pin_right = 33;
-const int vac_pin_left  = 31;
+const int vac_pin_right = 27;
+const int vac_pin_left  = 45;
 int ID = 0;
 int vac_pin = 0;
 
@@ -384,6 +384,7 @@ void pub_topic2(byte *buffer, const char out_str[], byte arg0, byte arg1, byte a
 
 void loop()
 { 
+  armTask = true;
   if (armTask)
   {
     is_grip_msg.data = (bool)digitalRead(is_grip_right);
