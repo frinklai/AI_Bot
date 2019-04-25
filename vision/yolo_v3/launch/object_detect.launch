@@ -6,4 +6,7 @@
    <node pkg="strategy" type="vision_servo_task.py" name="vision_servo_task" output="screen">       
    </node>
 
+   <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">       
+   </node>
+
 </launch>
