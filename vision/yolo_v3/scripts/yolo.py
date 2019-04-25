@@ -33,7 +33,7 @@ class YOLO(object):
     _defaults = {
         "model_path"  : pth.model_data_path + 'model_data/yolo.h5',
         "anchors_path": pth.model_data_path + 'model_data/yolo_anchors.txt',
-        "classes_path": pth.model_data_path + 'model_data/coco_classes.txt',
+        "classes_path": pth.model_data_path + 'model_data/task_class.txt',
 
         "score" : 0.3,
         "iou" : 0.45,
@@ -128,7 +128,7 @@ class YOLO(object):
             boxed_image = letterbox_image(image, new_image_size)
         image_data = np.array(boxed_image, dtype='float32')
 
-        print("\nimage_data.shape = " + str(image_data.shape))
+        # print("\nimage_data.shape = " + str(image_data.shape))
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
 
@@ -181,7 +181,7 @@ class YOLO(object):
             ROI_array.append(ROI_info)
 
         end = timer()
-        print("Time cost = " + str(round((end - start)*1000, 2)) + " ms/frame")
+        # print("Time cost = " + str(round((end - start)*1000, 2)) + " ms/frame")
         return image, ROI_array
 
     def close_session(self):
