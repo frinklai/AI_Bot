@@ -335,7 +335,7 @@ void BaseModule::p2pPoseMsgCallback(const manipulator_h_base_module_msgs::P2PPos
   
   bool    slide_success = manipulator_->slideInverseKinematics(p2p_positoin, p2p_rotation, 
                                                             slide_->slide_pos, slide_->goal_slide_pos);
-
+  std::cout<<"slideInverseKinematics = "<<slide_success <<std::endl;
   // std::cout<<"<<<<<<<<<<<<<<<<<<<slide_->goal_slide_pos<<<<<<<<<<<<<<<<<"<<std::endl<<slide_->goal_slide_pos<<std::endl;
   bool    ik_success = manipulator_->inverseKinematics(robotis_->ik_id_end_,
                                                             p2p_positoin, p2p_rotation, p2p_phi, slide_->goal_slide_pos, true);
