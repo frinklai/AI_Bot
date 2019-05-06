@@ -33,6 +33,19 @@ up              = 5
 back_home       = 6
 wait_img_pos    = 7
 grasping        = 8
+move_standby    = 9
+move_to_box     = 10
+box_down        = 11
+box_up          = 12
+move_to_obj     = 13
+move_to_init    = 14
+
+count = 0
+box_cnt = 1
+obj_pos = 0
+obj_name = ''
+x = 0
+y = 0
 
 objectName = ['lunchbox', 'lunchbox', 'lunchbox', 'lunchbox',
               'drink',    'drink',    'drink',    'drink',
@@ -248,7 +261,7 @@ class stockingTask:
             if self.arm.is_busy:
                 # if (self.nowState == leaveBin or self.nowState == frontSafetyPos or self.nowState == move2Shelf) and not self.suction.is_grip and not self.en_sim:
                 #     self.state = missObj
-                print('self.state == busy')
+    #            print('self.state == busy')
                 return
             else:
                 self.state    = self.nextState
@@ -259,13 +272,28 @@ class stockingTask:
             print('self.state == initPose')
             self.state = busy
             self.nextState = wait_img_pos
-            self.arm.set_speed(self.speed)
-            self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
+            #self.arm.set_speed(self.speed)
+            self.arm.set_speed(10)
+            self.pos   = [0, 0.5, -0.5]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)  
+            #self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
             # self.suction.gripper_suction_deg(0)
 
         elif self.state == wait_img_pos:        # wait_img_pos
             # print('self.state == wait_img_pos')
             self.state = wait_img_pos
+
+            #aaa
+            #----------------------------------------------------------
+            
+            self.pos   = [0, 0.85, -0.02]
+            self.euler = [0, 0, 90]
+            self.phi = 0
+            self.arm.ikMove(mode='p2p', pos = self.pos, euler =  self.euler, phi = self.phi)
+            #----------------------------------------------------------
+
             # print('len(self.img_data_list = ', len(self.img_data_list))
             if(len(self.img_data_list)!=0):
                 for i in range(len(self.img_data_list)):
@@ -277,6 +305,9 @@ class stockingTask:
                     print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
                     print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
                     self.nextState = goto
+                    obj_name = self.img_data.object_name
+                    x = (self.img_data.min_x + self.img_data.Max_x)/2
+                    y = (self.img_data.min_y + self.img_data.Max_y)/2
             else:
                 self.nextState = wait_img_pos
             self.state = self.nextState
@@ -284,15 +315,69 @@ class stockingTask:
         elif self.state == goto:               # goto
             print('self.state == goto')
             self.state = busy
+            self.nextState = move_standby
+        #    self.nextState = down
+        #    self.pos   = [0, 0.4, -0.55]
+        #    self.euler = [0, 0, 0]
+        #    self.phi = 0
+        #    self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+        #aaa
+        #    self.pos   = [0.1, 0, 0.1]
+        #    self.arm.relative_move_pose(mode='line', pos=self.pos)
+        #--------------------------------------------------------------------------
+        #    self.pos = [0, -0.45, -0.55]
+        #    self.euler = [0, 0, -90]
+        #    self.phi = 0
+        #    self.arm.relative_move(mode='p2p', euler=self.euler, pos =self.pos, phi=self.phi)        
+
+        elif self.state == move_standby:
+            print('self.state == move_standby')
+            self.state = busy
+            self.nextState = move_to_obj
+            self.pos   = [0, 0.6, -0.4]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode = 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        elif self.state == move_to_obj:
+            global obj_pos
+            global obj_name
+            global x
+            global y
+        #    pos_x = [0.05, -0.06, -0.17]
+        #    pos_y = [0.68, 0.77, 0.67]
+        #    pos_z = [-0.4, -0.39, -0.4]
+            print('self.state == move_to_obj')
+            
+            posX = (320-x)*0.0012-0.01
+            posY = (y-240)*0.0012+0.6
+            print('---------')
+            print(posX,posY)
+            if obj_name == 'tea':
+                pos_z = -0.39
+            else:
+                pos_z = -0.4 
+            self.state = busy
             self.nextState = down
-            self.pos   = [0.1, 0, 0.1]
-            self.arm.relative_move_pose(mode='line', pos=self.pos)
+            self.pos   = [round(posX, 4), round(posY, 4), pos_z]
+           # self.pos = [-0.3208, 0.6467999999999999, -0.39]
+            print(self.pos)
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)  
+              
+        #--------------------------------------------------------------------------
         
         elif self.state == down:               # down
             print('self.state == down')
+        #aaa    
             self.suction.gripper_vaccum_on()
             self.state = grasping
-            self.pos   = [0, 0, -0.1]
+        #----------------------------------
+            self.state = busy
+            self.nextState = grasping
+        #----------------------------------
+            self.pos   = [0, 0, -0.16]
             self.arm.relative_move_pose(mode='line', pos=self.pos)
             rospy.sleep(.1)
 
@@ -310,17 +395,78 @@ class stockingTask:
         elif self.state == up:               # up
             print('self.state == up')
             self.state = busy
-            self.nextState = back_home
-            self.pos   = [0, 0, 0.1]
+        #aaa
+        #    self.nextState = back_home
+        #-------------------------------------
+            self.nextState = move_to_box
+        #-------------------------------------
+            self.pos   = [0, 0, 0.16]
             self.arm.relative_move_pose(mode='line', pos=self.pos)
 
         elif self.state == back_home:               # back_home
             print('self.state == back_home')
-            # self.suction.gripper_vaccum_off()
+            self.suction.gripper_vaccum_off()
             self.state = busy
             self.nextState = idle
             self.arm.jointMove(0, (0, -1, 0, 1.57, 0, -0.57, 0))
             self.arm.relative_move_pose(mode='line', pos=self.pos)
+
+        #aaa
+        #------------------------------------------------------------
+        elif self.state == move_to_box:
+            global count
+            global obj_name
+            print('self.state == move_to_box')
+            self.state = busy
+            self.nextState = box_down  
+            print(obj_name)
+            if obj_name == 'soda':
+                print('soddddddddddddddddddddaaaaaaaaaaaaaaaaaaaa')
+                self.pos = [-0.2, 0.4, -0.4]
+            elif obj_name == 'tea':
+                print('ttttttttttttttttttteeeeeeeeeeeeeeaaaaaaaaa')
+                self.pos = [0, 0.4, -0.4]
+            elif obj_name == 'bottle':
+                print('boooooooooooooooooooooooooooooootllllllle')
+                self.pos = [0.2, 0.4, 0.4]
+            else:
+                print('aaaaaaaaaaaaa')
+        #    self.pos   = [-0.2 + count, 0.4, -0.4]  
+            self.euler = [0, 0, 0]
+            self.phi   = 0
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            count += 0.2
+
+        elif self.state == box_down:
+            print('self.state == box_down')
+            self.state = busy
+            self.nextState = box_up
+            self.pos = [0, 0, -0.05]
+            self.arm.relative_move_pose(mode = 'line', pos = self.pos)
+
+        elif self.state == box_up:
+            global box_cnt
+            print('self.state == box_up')
+            self.suction.gripper_vaccum_off()
+            self.state = busy
+            if box_cnt == 3:    
+                self.nextState = move_to_init
+            else:            
+                self.nextState = wait_img_pos   
+            self.pos = [0, 0, 0.05]
+            self.arm.relative_move_pose(mode = 'line', pos = self.pos)   
+            box_cnt +=1  
+
+        elif self.state == move_to_init:
+            print('self.state == move_to_box')
+            self.state = busy
+            self.nextState = idle  
+            
+            self.pos   = [0, 0.5, -0.4]  
+            self.euler = [0, 0, 0]
+            self.phi   = 0
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
+        #------------------------------------------------------------
 
     def get_obj_info_cb(self, data):
         self.img_data = ROI()
