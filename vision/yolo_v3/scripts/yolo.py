@@ -230,6 +230,17 @@ def detect_video(yolo, video_path, output_path=""):
                 
                 ROI_array_msg.ROI_list.append(ROI_msg)
             roi_array_pub.publish(ROI_array_msg)
+        #    print("object name:", ROI_msg.object_name)
+        #    print("object min_x:", ROI_msg.min_x)
+        #    print("object min_y:", ROI_msg.min_y)
+        #    print("object Max_x:", ROI_msg.Max_x)
+        #    print("object Max_y:", ROI_msg.Max_y)
+        #    print("center:",(ROI_msg.min_x + ROI_msg.Max_x)/2, (ROI_msg.min_y + ROI_msg.Max_y)/2)
+        #    x = (ROI_msg.min_x + ROI_msg.Max_x)/2
+        #    y = (ROI_msg.min_y + ROI_msg.Max_y)/2
+        #    print("obj_true_pos:",((320-x)*0.0012-0.01),((y-240)*0.0012+0.6))
+        #    print("------------------------------")
+            
         else:
             print("no object now")
         result = np.asarray(image)
