@@ -29,6 +29,14 @@ double sign(double x)
     return 0.0;
 }
 
+double hard_limit(double num)
+{
+  if(num>=0)
+    return 1;
+  else 
+    return -1;
+}
+
 int combination(int n, int r)
 {
   if(n == r || r == 0)
