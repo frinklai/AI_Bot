@@ -324,6 +324,7 @@ void BaseModule::p2pPoseMsgCallback(const manipulator_h_base_module_msgs::P2PPos
                                         robotis_->p2p_pose_msg_.pose.orientation.z);
 
   double p2p_phi = robotis_->p2p_pose_msg_.phi;
+  std::cout<<"robotis_->p2p_pose_msg_.phi = "<<robotis_->p2p_pose_msg_.phi<<std::endl;
 
   p2p_rotation = robotis_framework::convertQuaternionToRotation(p2p_quaterniond);
 
@@ -644,7 +645,90 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
       double  tar_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
 
       robotis_->is_ik = true;
+      //----------------------------------------------------------------------------
+      //--------------------------start to avoid joint limiit-----------------------
+      //----------------------------------------------------------------------------
+      double phi_add_rate = 0.05; //deg
+
+      robotis_->ik_target_phi_ = robotis_->ik_start_phi_;
+      std::cout<<"[start] robotis_->ik_target_phi_ = "<<robotis_->ik_target_phi_*180/M_PI <<std::endl;
+      std::vector<int> idx = manipulator_->findRoute(robotis_->ik_id_end_);
+      Eigen::VectorXd Old_JointAngle(8);
+      for (int id = 0; id < idx.size(); id++)
+        Old_JointAngle[idx[id]] = manipulator_->manipulator_link_data_[idx[id]]->joint_angle_;
+
+      double pos_phi_joint_lmt_degree, curr_phi_joint_lmt_degree, neg_phi_joint_lmt_degree, tmp_joint_lmt_degree;
+      double joint_lmt_degree = 999;
+      for(int i=-1 ; i<=1 ; i++)
+      {
+        manipulator_->is_est_joint_limit = true;
+        manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
+                                                              robotis_->ik_target_rotation_, (robotis_->ik_target_phi_)+phi_add_rate*i*M_PI/180, tar_slide_pos, false);
+        manipulator_->is_est_joint_limit = false;
+        joint_lmt_degree = 999;
+        for(int j=1 ; j<=7 ; j++)
+        {
+          tmp_joint_lmt_degree = manipulator_->est_joint_limit_degree(manipulator_->manipulator_link_data_[j]->joint_limit_max_, 
+                                                        manipulator_->manipulator_link_data_[j]->joint_limit_min_, 
+                                                        manipulator_->JointAngle_for_est_lmt[j]);
+          if(tmp_joint_lmt_degree < joint_lmt_degree)
+          {
+            joint_lmt_degree = tmp_joint_lmt_degree;
+          }
+        }
+
+        //joint_lmt_degree more small, more dangerous
+        if(i==-1){
+          neg_phi_joint_lmt_degree  = joint_lmt_degree;
+        }
+        else if(i==0){
+          curr_phi_joint_lmt_degree = joint_lmt_degree;
+        }
+        else{
+          pos_phi_joint_lmt_degree  = joint_lmt_degree;
+        }
+      }
+      std::cout<<"pos/zero/neg phi's joint lmt score = "<<pos_phi_joint_lmt_degree  <<", " 
+                                                        <<curr_phi_joint_lmt_degree <<", "  
+                                                        <<neg_phi_joint_lmt_degree  <<std::endl;
+      // set phi_add_rate
+      double max_phi_add_rate = 0.8;
+      double joint_angle_diff_degree = fabs(cos( (90*M_PI/180) + manipulator_->manipulator_link_data_[4]->joint_angle_));
+      // phi_add_rate = max_phi_add_rate* (joint_angle_diff_degree/10) * (1-curr_phi_joint_lmt_degree);
+      phi_add_rate = max_phi_add_rate * (1-curr_phi_joint_lmt_degree);
       
+      std::cout<<"phi_add_rate = " <<phi_add_rate <<std::endl;
+      std::cout<<"joint_lmt_degree = " <<joint_lmt_degree <<std::endl;
+
+      // Limit max phi add rate
+      if(phi_add_rate > max_phi_add_rate)
+        phi_add_rate = max_phi_add_rate;
+      // send the dir with max score
+      if((neg_phi_joint_lmt_degree > curr_phi_joint_lmt_degree)&&(neg_phi_joint_lmt_degree > pos_phi_joint_lmt_degree))
+      {
+        std::cout<<"========== [send NEGATIVE phi] ==========" <<std::endl;
+        robotis_->ik_target_phi_ = (robotis_->ik_target_phi_)-phi_add_rate*M_PI/180;
+      }
+
+      else if((pos_phi_joint_lmt_degree > curr_phi_joint_lmt_degree)&&(pos_phi_joint_lmt_degree > neg_phi_joint_lmt_degree))
+      {
+        std::cout<<"========== [send POSSITIVE phi] ==========" <<std::endl;
+        robotis_->ik_target_phi_ = (robotis_->ik_target_phi_)+phi_add_rate*M_PI/180;
+      }
+
+      else
+      {
+        std::cout<<"========== [send CURRENT phi] ==========" <<std::endl;
+        robotis_->ik_target_phi_ = (robotis_->ik_target_phi_);
+      }
+        
+      std::cout<<"[end] robotis_->ik_target_phi_ = "<<robotis_->ik_target_phi_*180/M_PI <<std::endl;
+      robotis_->ik_start_phi_ = robotis_->ik_target_phi_;
+      std::cout<<"======================================\n " <<std::endl;
+      //----------------------------------------------------------------------------
+      //--------------------------end to avoid joint limit -------------------------
+      //----------------------------------------------------------------------------
+      robotis_->setInverseKinematics(robotis_->cnt_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_);
       bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
                                                               robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false);
     
@@ -658,12 +742,8 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
         {
           std::cout<<"====robotis_->cnt_====="<<robotis_->cnt_<<" ";
           robotis_->cnt_--;
-          // robotis_->cnt_ = (robotis_->cnt_ > 1) ? (robotis_->cnt_-1) : robotis_->cnt_;
           std::cout<<robotis_->cnt_<<std::endl;
         }
-          // std::cout<<"==========================process after ik"<<std::endl;
-          // manipulator_->forwardKinematics(7);
-          // assert(false);
       }
       else
       {
