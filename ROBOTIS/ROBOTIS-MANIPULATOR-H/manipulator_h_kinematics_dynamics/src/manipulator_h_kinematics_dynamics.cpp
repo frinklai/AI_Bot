@@ -36,6 +36,11 @@ ManipulatorKinematicsDynamics::~ManipulatorKinematicsDynamics()
 
 ManipulatorKinematicsDynamics::ManipulatorKinematicsDynamics(TreeSelect tree)
 {
+  // for setimate joint limit
+  is_est_joint_limit = false;
+  JointAngle_for_est_lmt = Eigen::MatrixXd::Zero(7, 1);
+
+  // load data
   for (int id = 0; id <= ALL_JOINT_ID; id++)
     manipulator_link_data_[id] = new LinkData();
 
@@ -375,6 +380,7 @@ Eigen::MatrixXd ManipulatorKinematicsDynamics::calcVWerr(Eigen::MatrixXd tar_pos
   return err;
 }
 
+//self p2p
 bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd tar_position,
     Eigen::MatrixXd tar_orientation, double tar_phi, double tar_slide_pos, bool is_p2p)
 {
@@ -392,11 +398,11 @@ bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd ta
   else
   {
     for (int id = 0; id < idx.size(); id++)
-    Old_JointAngle[idx[id]] = manipulator_link_data_[idx[id]]->joint_angle_;
+      Old_JointAngle[idx[id]] = manipulator_link_data_[idx[id]]->joint_angle_;
   }
-
+  
   ik_success = InverseKinematics_7(tar_position, tar_orientation, tar_phi, tar_slide_pos, Old_JointAngle, is_p2p);
-  std::cout<<"InverseKinematics_7 = "<<ik_success <<std::endl;
+  
   forwardKinematics(7);
   
   int joint_num;
@@ -404,7 +410,6 @@ bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd ta
   for (int id = 0; id < idx.size(); id++)
   {
     joint_num = idx[id];
-    std::cout<<"JOINT ANGLE "<< joint_num<<" = "<<manipulator_link_data_[joint_num]->joint_angle_ <<std::endl;
     if (manipulator_link_data_[joint_num]->joint_angle_ > manipulator_link_data_[joint_num]->joint_limit_max_)
     {
       limit_success = false;  
@@ -878,20 +883,51 @@ bool ManipulatorKinematicsDynamics::InverseKinematics_7( Eigen::VectorXd goal_po
     else
       manipulator_link_data_[0]->singularity_ = false;
   }
-  
-  for (int id = 0; id <= MAX_JOINT_ID; id++){
-    manipulator_link_data_[id]->joint_angle_ = JointAngle.coeff(id);
-  }
-  if(ik_success)
+  if(is_est_joint_limit == false)
   {
-    manipulator_link_data_[END_LINK]->phi_ = Phi;
-    manipulator_link_data_[0]->slide_position_ = slide_position;
-    for (int id = 0; id <= MAX_JOINT_ID; id++)
-      manipulator_link_data_[id]->joint_angle_ = JointAngle.coeff(id);
+      for (int id = 0; id <= MAX_JOINT_ID; id++){
+        manipulator_link_data_[id]->joint_angle_ = JointAngle.coeff(id);
+      }
+      if(ik_success)
+      {
+        manipulator_link_data_[END_LINK]->phi_ = Phi;
+        manipulator_link_data_[0]->slide_position_ = slide_position;
+        for (int id = 0; id <= MAX_JOINT_ID; id++)
+          manipulator_link_data_[id]->joint_angle_ = JointAngle.coeff(id);
+      }
   }
+  else
+  {
+    for (int id = 0; id <= MAX_JOINT_ID; id++){
+        JointAngle_for_est_lmt[id] = JointAngle.coeff(id);
+    }
+  }
+  
+
   // /////////////////////////////////////////////////////////////////////////////////////////////////
   return ik_success;
 }
+
+double ManipulatorKinematicsDynamics::est_joint_limit_degree(double max_limit, double min_limit, double curr_angle)
+{
+
+  int ini_score = -999;
+  int best_score_id = -999;
+  double tmp_score,score, tmp_w, w, half ;
+  // int pow_ = 4;
+  for (int id = 0; id <= MAX_JOINT_ID; id++)
+  {
+    half = max_limit - (max_limit-min_limit)/2;
+    tmp_score = 1 - pow(fabs(curr_angle - half)/fabs(max_limit-half), 4);
+
+    tmp_w = robotis_framework::sign(curr_angle-min_limit) * robotis_framework::sign(max_limit-curr_angle) - 1;
+    w = robotis_framework::hard_limit(tmp_w);
+
+    score = tmp_score*w;
+  }
+  return score;
+}
+
 bool ManipulatorKinematicsDynamics::slideInverseKinematics(Eigen::Vector3d goal_position, Eigen::Matrix3d rotation, 
                                                             double slide_pos, double& goal_slide_pos)
 {
