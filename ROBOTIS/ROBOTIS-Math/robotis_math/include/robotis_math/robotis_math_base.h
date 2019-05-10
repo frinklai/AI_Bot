@@ -42,7 +42,7 @@ inline double powDI(double a, int b)
 }
 
 double sign(double x);
-
+double hard_limit(double num);
 int combination(int n, int r);
 
 typedef struct
