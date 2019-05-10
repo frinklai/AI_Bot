@@ -88,7 +88,7 @@ void RobotisState::setInverseKinematics(int cnt, Eigen::MatrixXd start_rotation,
 
   Eigen::Quaterniond quaternion = start_quaternion.slerp(count, target_quaternion);
 
-  ik_target_phi_ = start_phi + count * (kinematics_pose_msg_.phi - start_phi);
+  // ik_target_phi_ = start_phi + count * (kinematics_pose_msg_.phi - start_phi);
 
   ik_target_rotation_ = robotis_framework::convertQuaternionToRotation(quaternion);
   // target_euler = ManipulatorKinematicsDynamics::rotation2rpy(ik_target_rotation_);
