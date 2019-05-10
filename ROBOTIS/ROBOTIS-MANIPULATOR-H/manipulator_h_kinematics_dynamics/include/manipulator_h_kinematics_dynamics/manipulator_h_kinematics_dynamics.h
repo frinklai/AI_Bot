@@ -23,6 +23,7 @@
 #include <string>
 #include "link_data.h"
 #include "manipulator_h_kinematics_dynamics_define.h"
+#include "../../../ROBOTIS-Math/robotis_math/include/robotis_math/robotis_math_base.h"
 
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
@@ -43,7 +44,7 @@ private:
   double d1,d2,d3,d4,a1,a2;
   double Lse, Lew;
   double RL_prm;
-
+  
   Eigen::VectorXd JointAngle;
   Eigen::VectorXd tmp_JointAngle;
 
@@ -86,6 +87,12 @@ public:
   static Eigen::MatrixXd rotation2rpy( Eigen::MatrixXd rotation );
   void load_LinkParam();
   void getPhiAngle();
+  double est_joint_limit_degree(double max_limit, double min_limit, double curr_angle);
+
+  // for estimate joint limit
+  Eigen::VectorXd JointAngle_for_est_lmt;
+  bool is_est_joint_limit;  // if true, the result of kinematics will not be send to motor.
+
 };
 
 }
