@@ -8,21 +8,25 @@ import sys
 
 class Gripper:
     def __init__(self):
-        print("")
+        self.TASK_EXE_TIME = 3
+        self.TASK_DELAY_TIME = 0.5
 
     def Send_Gripper_Command(self, cmd_id):
         num = self.Conver_cmd_to_id(cmd_id)
         try:
             control_gripper = rospy.ServiceProxy('gripper_service', gripper_cmd)    
             resp1 = control_gripper(int(num))          
-            rospy.loginfo("[client] Send command success." ); 
+            if(cmd_id != 'Stop'):
+                rospy.loginfo("[client] Send command success, wait for gripper do task" ); 
+                rospy.sleep(self.TASK_EXE_TIME)                      # wait for gripper complete task
+                self.Send_Gripper_Command('Stop')        # focus stop 
+                rospy.sleep(self.TASK_DELAY_TIME)   
         
 
         except rospy.ServiceException, e:
             rospy.logerr("[client] Service call failed" ); 
             print "Service call failed: %s"%e
-        rospy.sleep(0.5)
-        print("")
+                         
 
     def Connect_to_Server(self):
         rospy.wait_for_service('gripper_service')   
@@ -41,12 +45,18 @@ class Gripper:
         
         elif (cmd == 'Stop'):        return 0
         elif (cmd == 'Disable'):     return 9
+        elif (cmd == 'rot_to_norm'):     return 10
+        elif (cmd == 'rot_to_parll'):     return 11
         
 
 if __name__ == '__main__':
+    
     rospy.init_node('stm_client_node', anonymous=True)
     gripper = Gripper()
     gripper.Connect_to_Server()
-    gripper.Send_Gripper_Command('Catch_all')
+    gripper.Send_Gripper_Command('Loosen_all')
+
+    print('Mission Complete!!!')
+
 
         
