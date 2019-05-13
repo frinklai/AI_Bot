@@ -1,0 +1,7 @@
+<launch>
+    <arg name="val" default="5"/>
+
+    <node pkg = "comm_stm32"  type = "send_stm_server"  name = "stm_server"  output="screen"/>
+    <node pkg = "comm_stm32"  type = "stm_client.py"  name = "stm_client" args="$(arg val)"  output="screen"/>
+
+</launch>
