@@ -2,7 +2,7 @@
 #include "comm_stm32/gripper_cmd.h" 
 #include <serial/serial.h>
 #include <std_msgs/UInt8.h>
-
+#include <std_msgs/String.h>
 serial::Serial ser;
 #define	sBUFFERSIZE	1               //send    buffer size 
 #define	rBUFFERSIZE	1               //receive buffer size 
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     // Init Port
     try
     {
-        ser.setPort("/dev/ttyUSB2");
+        ser.setPort("/dev/ttyUSB1");
         ser.setBaudrate(115200);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
