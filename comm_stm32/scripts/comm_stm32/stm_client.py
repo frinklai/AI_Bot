@@ -51,7 +51,7 @@ class Gripper:
 
 if __name__ == '__main__':
     
-    rospy.init_node('stm_client_node', anonymous=True)
+    rospy.init_node('stm_client_', anonymous=True)
     gripper = Gripper()
     gripper.Connect_to_Server()
     gripper.Send_Gripper_Command('Loosen_all')
