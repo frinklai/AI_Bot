@@ -4,6 +4,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from get_image.srv import *
 import datetime 
+#sys.path.insert(1, "/home/iclab-arm/.local/lib/python3.5/site-packages/") 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import sys
@@ -11,7 +12,7 @@ import time
 import argparse
 import numpy as np
 import os
-sys.path.insert(1, "/home/iclab-arm/.local/lib/python3.5/site-packages/") 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--Object_Name', type=str, default='.', help='Class name of training object.')
 FLAGS = parser.parse_args()
@@ -56,6 +57,6 @@ class Get_image():
 
 if __name__ == '__main__':
 
-    print(sys.version)
+    print('python version is: ', sys.version)
     listener = Get_image()
     cv2.destroyAllWindows()
