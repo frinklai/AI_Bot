@@ -199,9 +199,14 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(send_stm_server src/stm_server.cpp)
+add_dependencies(send_stm_server ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(send_stm_server comm_stm32)
 target_link_libraries(send_stm_server ${catkin_LIBRARIES})
 
+
 add_executable(send_stm_client src/stm_client.cpp)
+add_dependencies(send_stm_client ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(send_stm_client comm_stm32)
 target_link_libraries(send_stm_client ${catkin_LIBRARIES})
 
 
