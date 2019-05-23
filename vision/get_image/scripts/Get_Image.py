@@ -1,4 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import sys
+sys.path.insert(1, "/usr/local/lib/python3.5/dist-packages/")
+sys.path.insert(0, '/opt/installer/open_cv/cv_bridge/lib/python3/dist-packages/')
 import rospy
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -7,10 +10,9 @@ import datetime
 #sys.path.insert(1, "/home/iclab-arm/.local/lib/python3.5/site-packages/") 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
-import sys
+import numpy as np
 import time 
 import argparse
-import numpy as np
 import os
 
 parser = argparse.ArgumentParser()
@@ -48,7 +50,8 @@ class Get_image():
     
     def get_image(self, crop_image):
         if cv2.waitKey(33) & 0xFF == ord('s'):
-            name = str(Train_Data_Dir + str(datetime.datetime.now()) + '_' + Object_Name + '_' + str(self.take_picture_counter+1) + ".jpg")
+            #name = str(Train_Data_Dir + str(datetime.datetime.now()) + '_' + Object_Name + '_' + str(self.take_picture_counter+1) + ".jpg")
+            name = str(Train_Data_Dir + str(Object_Name + '_' + str(self.take_picture_counter+1) + ".jpg"))
             cv2.imwrite(name,crop_image)
             print("[Save] ", name)
             self.take_picture_counter += 1
