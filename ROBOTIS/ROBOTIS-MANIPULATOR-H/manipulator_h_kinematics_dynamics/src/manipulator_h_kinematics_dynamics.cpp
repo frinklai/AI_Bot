@@ -910,7 +910,6 @@ bool ManipulatorKinematicsDynamics::InverseKinematics_7( Eigen::VectorXd goal_po
 
 double ManipulatorKinematicsDynamics::est_joint_limit_degree(double max_limit, double min_limit, double curr_angle)
 {
-
   int ini_score = -999;
   int best_score_id = -999;
   double tmp_score,score, tmp_w, w, half ;
@@ -925,6 +924,16 @@ double ManipulatorKinematicsDynamics::est_joint_limit_degree(double max_limit, d
 
     score = tmp_score*w;
   }
+  return score;
+}
+
+double ManipulatorKinematicsDynamics::est_wrist_singularity_degree(double Joint2, double Joint6)
+{
+  int n = 0;
+
+  double score_J1_to_J3 = -1*cos(Joint2 + (90*M_PI/180) ) * (1-n)+1;
+  double score_J5_to_J7 = -1*cos(Joint6 + (90*M_PI/180) ) * (1-n)+1;
+  double score = (score_J1_to_J3 + score_J1_to_J3)/2;
   return score;
 }
 
