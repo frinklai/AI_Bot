@@ -88,6 +88,7 @@ public:
   void load_LinkParam();
   void getPhiAngle();
   double est_joint_limit_degree(double max_limit, double min_limit, double curr_angle);
+  double est_wrist_singularity_degree(double Joint2, double Joint6);
 
   // for estimate joint limit
   Eigen::VectorXd JointAngle_for_est_lmt;
