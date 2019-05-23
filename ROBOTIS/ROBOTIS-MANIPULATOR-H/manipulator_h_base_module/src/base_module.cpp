@@ -657,7 +657,7 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
       for (int id = 0; id < idx.size(); id++)
         Old_JointAngle[idx[id]] = manipulator_->manipulator_link_data_[idx[id]]->joint_angle_;
 
-      double pos_phi_joint_lmt_degree, curr_phi_joint_lmt_degree, neg_phi_joint_lmt_degree, tmp_joint_lmt_degree;
+      double pos_phi_joint_lmt_degree, curr_phi_joint_lmt_degree, neg_phi_joint_lmt_degree, tmp_joint_lmt_degree, tmp_wrist_sing_degree;
       double joint_lmt_degree = 999;
       for(int i=-1 ; i<=1 ; i++)
       {
@@ -671,6 +671,9 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
           tmp_joint_lmt_degree = manipulator_->est_joint_limit_degree(manipulator_->manipulator_link_data_[j]->joint_limit_max_, 
                                                         manipulator_->manipulator_link_data_[j]->joint_limit_min_, 
                                                         manipulator_->JointAngle_for_est_lmt[j]);
+          tmp_wrist_sing_degree = manipulator_->est_wrist_singularity_degree(manipulator_->JointAngle_for_est_lmt[2], manipulator_->JointAngle_for_est_lmt[5]);
+
+          //tmp_joint_lmt_degree = (tmp_joint_lmt_degree+tmp_wrist_sing_degree)/2.0; // uncomment here for consider wrist singularity
           if(tmp_joint_lmt_degree < joint_lmt_degree)
           {
             joint_lmt_degree = tmp_joint_lmt_degree;
@@ -692,7 +695,7 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
                                                         <<curr_phi_joint_lmt_degree <<", "  
                                                         <<neg_phi_joint_lmt_degree  <<std::endl;
       // set phi_add_rate
-      double max_phi_add_rate = 0.8;
+      double max_phi_add_rate = 0.5;
       double joint_angle_diff_degree = fabs(cos( (90*M_PI/180) + manipulator_->manipulator_link_data_[4]->joint_angle_));
       // phi_add_rate = max_phi_add_rate* (joint_angle_diff_degree/10) * (1-curr_phi_joint_lmt_degree);
       phi_add_rate = max_phi_add_rate * (1-curr_phi_joint_lmt_degree);
