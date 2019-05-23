@@ -3,6 +3,9 @@
 """
 Class definition of YOLO_v3 style detection model on image and video
 """
+import sys
+sys.path.insert(1, "/usr/local/lib/python3.5/dist-packages/")
+sys.path.insert(0, '/opt/installer/open_cv/cv_bridge/lib/python3/dist-packages/')
 
 import colorsys
 import os
@@ -12,6 +15,7 @@ import numpy as np
 from keras import backend as K
 from keras.models import load_model
 from keras.layers import Input
+from sensor_msgs.msg import Image as rosimage
 from PIL import Image, ImageFont, ImageDraw
 
 from yolo3.model import yolo_eval, yolo_body, tiny_yolo_body
@@ -21,13 +25,14 @@ from keras.utils import multi_gpu_model
 import sys
 import argparse
 import path_set as pth
-
+import cv2 as cv
+from cv_bridge import CvBridge, CvBridgeError
 # ros
 import rospy
 from yolo_v3.msg import ROI
 from yolo_v3.msg import ROI_array
 
-sys.path.insert(1, pth.python3_site_pkg_path) 
+#sys.path.insert(1, pth.python3_site_pkg_path) 
 
 class YOLO(object):
     _defaults = {
@@ -35,7 +40,7 @@ class YOLO(object):
         "anchors_path": pth.model_data_path + 'model_data/yolo_anchors.txt',
         "classes_path": pth.model_data_path + 'model_data/task_class.txt',
 
-        "score" : 0.3,
+        "score" : 0.05,
         "iou" : 0.45,
         "model_image_size" : (416, 416),
         "gpu_num" : 1,
@@ -47,6 +52,8 @@ class YOLO(object):
             return cls._defaults[n]
         else:
             return "Unrecognized attribute name '" + n + "'"
+    def FLIR_Callback(self, rosimage):
+        self.cv_image = self.bridge.imgmsg_to_cv2(rosimage, "bgr8")
 
     def __init__(self, **kwargs):
         self.__dict__.update(self._defaults) # set up default values
@@ -55,6 +62,8 @@ class YOLO(object):
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
         self.boxes, self.scores, self.classes = self.generate()
+        self.bridge = CvBridge()
+        self.cv_image = np.zeros((1024, 768, 3), np.uint8)
 
     def _get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -188,79 +197,56 @@ class YOLO(object):
         self.sess.close()
 
 def detect_video(yolo, video_path, output_path=""):
-    import cv2
-    video_path = 0
-    vid = cv2.VideoCapture(video_path)
-    if not vid.isOpened():
-        raise IOError("Couldn't open webcam or video")
-    video_FourCC    = int(vid.get(cv2.CAP_PROP_FOURCC))
-    video_fps       = vid.get(cv2.CAP_PROP_FPS)
-    video_size      = (int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                        int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    isOutput = True if output_path != "" else False
-    if isOutput:
-        print("!!! TYPE:", type(output_path), type(video_FourCC), type(video_fps), type(video_size))
-        out = cv2.VideoWriter(output_path, video_FourCC, video_fps, video_size)
-    accum_time = 0
-    curr_fps = 0
-    fps = "FPS: ??"
-    prev_time = timer()
+    
+    rospy.Subscriber("/camera/image_color", rosimage, yolo.FLIR_Callback)
+    
     while not rospy.is_shutdown():
-        return_value, frame = vid.read()
-        image = Image.fromarray(frame)
+        
+        image = Image.fromarray(yolo.cv_image)
         image, ROI_array_recive = yolo.detect_image(image)    # receieve ROI
+        
         if ROI_array_recive != None:
+            
             ROI_array_msg = ROI_array()
-            for i in range(len(ROI_array_recive)):
+            
+            for i in range(len(ROI_array_recive)):  
                 ROI_msg = ROI()
-                # if use python only (without ros), obj info will show in here
-                # print("object_name type = " + str(ROI_array_recive[i][0]))
-                # print("score type = "       + str(ROI_array_recive[i][1]))
-                # print("x_min type = "       + str(ROI_array_recive[i][2]))
-                # print("x_Max type = "       + str(ROI_array_recive[i][3]))
-                # print("y_min type = "       + str(ROI_array_recive[i][4]))
-                # print("y_Max type = "       + str(ROI_array_recive[i][5]))
-
                 ROI_msg.object_name = str(ROI_array_recive[i][0])
                 ROI_msg.score      = float(ROI_array_recive[i][1])
                 ROI_msg.min_x      = int(ROI_array_recive[i][2])
                 ROI_msg.Max_x      = int(ROI_array_recive[i][3])
                 ROI_msg.min_y      = int(ROI_array_recive[i][4])
                 ROI_msg.Max_y      = int(ROI_array_recive[i][5])
-                
-                ROI_array_msg.ROI_list.append(ROI_msg)
-            roi_array_pub.publish(ROI_array_msg)
-        #    print("object name:", ROI_msg.object_name)
-        #    print("object min_x:", ROI_msg.min_x)
-        #    print("object min_y:", ROI_msg.min_y)
-        #    print("object Max_x:", ROI_msg.Max_x)
-        #    print("object Max_y:", ROI_msg.Max_y)
-        #    print("center:",(ROI_msg.min_x + ROI_msg.Max_x)/2, (ROI_msg.min_y + ROI_msg.Max_y)/2)
-        #    x = (ROI_msg.min_x + ROI_msg.Max_x)/2
-        #    y = (ROI_msg.min_y + ROI_msg.Max_y)/2
-        #    print("obj_true_pos:",((320-x)*0.0012-0.01),((y-240)*0.0012+0.6))
-        #    print("------------------------------")
+                ROI_array_msg.ROI_list.append(ROI_msg)   
             
+            roi_array_pub.publish(ROI_array_msg) 
+
         else:
+            
             print("no object now")
+        
         result = np.asarray(image)
-        curr_time = timer()
-        exec_time = curr_time - prev_time
-        prev_time = curr_time
-        accum_time = accum_time + exec_time
-        curr_fps = curr_fps + 1
-        if accum_time > 1:
-            accum_time = accum_time - 1
-            fps = "FPS: " + str(curr_fps)
-            curr_fps = 0
-        cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=0.50, color=(255, 0, 0), thickness=2)
-        cv2.namedWindow("result", cv2.WINDOW_NORMAL)
-        cv2.imshow("result", result)
-        if isOutput:
-            out.write(result)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+
+        bounding_point = [[405, 25], [1440, 25], [1440, 982], [405, 982]]
+        line_color = [(255, 0, 0), (255, 0, 0), (255, 0, 0), (255, 0, 0)]
+        line_thickness = 5
+
+        rectangle_shift = [0, 0]
+
+        for i in range(4):
+            bounding_point[i][0] = bounding_point[i][0] + rectangle_shift[0]
+            bounding_point[i][1] = bounding_point[i][1] + rectangle_shift[1]
+            bounding_point[i] = tuple(bounding_point[i])
+
+        cv.line(result, bounding_point[0], bounding_point[1], line_color[0], line_thickness)
+        cv.line(result, bounding_point[1], bounding_point[2], line_color[1], line_thickness)
+        cv.line(result, bounding_point[2], bounding_point[3], line_color[2], line_thickness)
+        cv.line(result, bounding_point[3], bounding_point[0], line_color[3], line_thickness)
+        
+        cv.namedWindow("result", cv.WINDOW_NORMAL)
+        cv.imshow("result", result)
+        cv.waitKey(1)
+
     yolo.close_session()
 
 def detect_img(yolo):
