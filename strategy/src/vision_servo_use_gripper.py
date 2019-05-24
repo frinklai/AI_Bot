@@ -19,7 +19,7 @@ count   = 0
 box_cnt = 1
 
 PICKORDER = 0
-SPEED_L     = 20
+SPEED_L     = 30
 
 idle            = 0
 busy            = 1
@@ -119,8 +119,8 @@ class stockingTask:
             if(len(self.img_data_list)!=0):
                 #print('bbbb')
                 for i in range(len(self.img_data_list)):
-                    if(i!=0):
-                        print("\n")
+                    # if(i!=0):
+                    #     print("\n")
                     if (self.img_data.min_x > 400) and (self.img_data.min_y) > 20 and (self.img_data.Max_x < 1440) and (self.img_data.Max_y < 990):        
                         print("----- stra detect object_" + str(i) + " ----- ")
                         print("object_name = " + str(self.img_data.object_name))
@@ -245,12 +245,17 @@ class stockingTask:
             global box_cnt
             print('self.state == box_up')
             self.state = busy
-            if box_cnt == 4:    
-                self.nextState = move_to_init
-                self.finish = True
-            else:            
-                self.nextState = wait_img_pos  
-                #self.nextState = goto  
+
+            # if box_cnt == 4:    
+            #     self.nextState = move_to_init
+            #     self.finish = True
+            # else:            
+            #     self.nextState = wait_img_pos  
+            #     #self.nextState = goto  
+
+            self.nextState = wait_img_pos  # add this line for do infinite obj pick
+            print('box_cnt = ', box_cnt)
+
             self.pos = [0, 0, 0.05]
             self.arm.relative_move_pose(mode = 'p2p', pos = self.pos)   
             box_cnt +=1  
@@ -286,21 +291,21 @@ class stockingTask:
 if __name__ == '__main__':
     rospy.init_node('gripperasd', anonymous=True)
     gripper = Gripper()
-    gripper.Send_Gripper_Command('Loosen_all')
+    # gripper.Send_Gripper_Command('Loosen_all')
     # gripper.Send_Gripper_Command('rot_to_parll')
     # gripper.Send_Gripper_Command('rot_to_norm')
     
-    # left  = stockingTask('left')       # Set up left arm controller
-    # rospy.sleep(.3)
+    left  = stockingTask('left')       # Set up left arm controller
+    rospy.sleep(.3)
 
-    # rate = rospy.Rate(50)
+    rate = rospy.Rate(50)
 
-    # while not rospy.is_shutdown():
-    #     try:
-    #         left.process()
-    #     except rospy.ROSInterruptException:
-    #         print('error')
-    #         pass
-    #         break
-    #     rate.sleep()
+    while not rospy.is_shutdown():
+        try:
+            left.process()
+        except rospy.ROSInterruptException:
+            print('error')
+            pass
+            break
+        rate.sleep()
 
