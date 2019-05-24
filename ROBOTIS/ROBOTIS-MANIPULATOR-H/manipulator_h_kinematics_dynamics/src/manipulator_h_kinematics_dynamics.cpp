@@ -400,45 +400,56 @@ bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd ta
     for (int id = 0; id < idx.size(); id++)
       Old_JointAngle[idx[id]] = manipulator_link_data_[idx[id]]->joint_angle_;
   }
-  
-  ik_success = InverseKinematics_7(tar_position, tar_orientation, tar_phi, tar_slide_pos, Old_JointAngle, is_p2p);
-  
-  forwardKinematics(7);
-  
-  int joint_num;
-
-  for (int id = 0; id < idx.size(); id++)
+  for(int try_ik_cnt=1 ; try_ik_cnt<=10 ; try_ik_cnt++)
   {
-    joint_num = idx[id];
-    if (manipulator_link_data_[joint_num]->joint_angle_ > manipulator_link_data_[joint_num]->joint_limit_max_)
+    ik_success = InverseKinematics_7(tar_position, tar_orientation, tar_phi, tar_slide_pos, Old_JointAngle, is_p2p);
+    
+    forwardKinematics(7);
+    
+    int joint_num;
+
+    for (int id = 0; id < idx.size(); id++)
     {
-      limit_success = false;  
-      break;
+      joint_num = idx[id];
+      if (manipulator_link_data_[joint_num]->joint_angle_ > manipulator_link_data_[joint_num]->joint_limit_max_)
+      {
+        limit_success = false;  
+        break;
+      }
+      else if (manipulator_link_data_[joint_num]->joint_angle_ < manipulator_link_data_[joint_num]->joint_limit_min_)
+      {
+        limit_success = false;   
+        break;
+      }
+      else
+        limit_success = true;
     }
-    else if (manipulator_link_data_[joint_num]->joint_angle_ < manipulator_link_data_[joint_num]->joint_limit_min_)
+    
+    if (ik_success == true && limit_success == true)
     {
-      limit_success = false;   
-      break;
+      return true;
+    }
+    else if(try_ik_cnt < 10)
+    {
+      std::cout<<"=========================================="<<std::endl;
+      std::cout<<"IK FAILED!!! Try to calculate IK again !!!"<<std::endl;
+      std::cout<<"=========================================="<<std::endl;
+    }  
+    else if(!limit_success)
+    {
+      std::cout<<"Out of Joint \""<<joint_num<<"\" limit!!!"<<std::endl;
+      std::cout<<"desire cmd = " <<manipulator_link_data_[joint_num]->joint_angle_ <<std::endl;
+      std::cout<<"max degree = " <<manipulator_link_data_[joint_num]->joint_limit_max_ <<std::endl;
+      std::cout<<"min degree = " <<manipulator_link_data_[joint_num]->joint_limit_min_ <<std::endl;
+      return false;
     }
     else
-      limit_success = true;
+    {
+      std::cout<<"IK FAILED!!! Maybe no solution."<<std::endl;
+      return false;
+    }
+      
   }
-  
-  if (ik_success == true && limit_success == true)
-  {
-    return true;
-  }
-    
-  else if(!limit_success)
-  {
-    std::cout<<"Out of Joint \""<<joint_num<<"\" limit!!!"<<std::endl;
-    std::cout<<"desire cmd = " <<manipulator_link_data_[joint_num]->joint_angle_ <<std::endl;
-    std::cout<<"max degree = " <<manipulator_link_data_[joint_num]->joint_limit_max_ <<std::endl;
-    std::cout<<"min degree = " <<manipulator_link_data_[joint_num]->joint_limit_min_ <<std::endl;
-    return false;
-  }
-  else
-    return false;
 }
 
 bool ManipulatorKinematicsDynamics::inverseKinematics(int from, int to, Eigen::MatrixXd tar_position,
