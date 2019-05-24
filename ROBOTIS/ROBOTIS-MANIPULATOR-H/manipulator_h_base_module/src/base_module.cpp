@@ -731,10 +731,10 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
       //----------------------------------------------------------------------------
       //--------------------------end to avoid joint limit -------------------------
       //----------------------------------------------------------------------------
+      
       robotis_->setInverseKinematics(robotis_->cnt_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_);
       bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
                                                               robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false);
-    
       if (ik_success == true)
       {
         for (int id = 1; id <= MAX_JOINT_ID; id++)
@@ -752,14 +752,13 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
       {
         ROS_INFO("[end] send trajectory (ik failed)");
         publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "End Trajectory (IK Failed)");
-
         robotis_->is_moving_ = false;
         robotis_->ik_solve_ = false;
         robotis_->cnt_ = 0;
       }
       robotis_->is_ik = false;
     }
-    else
+    else //(robotis_->ik_solve_ == false)
     {
       for (int id = 1; id <= MAX_JOINT_ID; id++)
         joint_state_->goal_joint_state_[id].position_ = robotis_->calc_joint_tra_(robotis_->cnt_, id);
