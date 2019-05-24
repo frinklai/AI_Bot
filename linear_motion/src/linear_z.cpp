@@ -73,7 +73,7 @@ void send_cmd()
             cmd_arr[11] = speed*2;
             // cmd_arr[9] = speed*2;
 
-            std::cout << "speed = " << (cmd_arr[7] | cmd_arr[6]<<16) <<std::endl;
+            //std::cout << "speed = " << (cmd_arr[7] | cmd_arr[6]<<16) <<std::endl;
             write_command();
         }
         else
