@@ -1,0 +1,68 @@
+/*===========================================*/
+
+/* ================================================================= */
+/* ==================== object id properties ==================== */
+/* ================================================================= */
+/* #btn_Catch_finger1
+{
+    margin: 10px;
+	font-size: 18px;
+	border-radius: 30px;
+	border-style: ridge;
+	width: 120px;
+	height: 35px;
+	text-align: center;
+	background-color: lightblue; 
+}*/
+
+#btn_stop_all
+{
+	margin: 10px;
+	font-size: 18px;
+	border-radius: 30px;
+	border-style: ridge;
+	width: 150px;
+	height: 40px;
+	text-align: center;
+	background-color: red;
+}
+
+#btn_disable_all
+{
+	margin: 10px;
+	font-size: 18px;
+	border-radius: 30px;
+	border-style: ridge;
+	width: 150px;
+	height: 40px;
+	text-align: center;
+	background-color: red;
+}
+
+/* ================================================================= */
+/* ==================== object class properties ==================== */
+/* ================================================================= */
+.multi_finger_Control
+{
+	margin: 10px;
+	font-size: 18px;
+	border-radius: 30px;
+	border-style: ridge;
+	width: 150px;
+	height: 40px;
+	text-align: center;
+	background-color: lightgreen;
+}
+
+.single_finger_Control
+{
+	margin: 10px;
+	font-size: 18px;
+	border-radius: 30px;
+	border-style: ridge;
+	width: 150px;
+	height: 40px;
+	text-align: center;
+	background-color: lightblue;
+}
+

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8" name="author" content="YuCheng">
+    <title>AI_Bot UI</title>
+
+    <!-- =========================== Offical libs ============================ -->
+
+    <!-- css lib -->
+    <link rel="stylesheet" href="font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="bootstrap-3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="jquery-ui-1.12.1/jquery-ui.css">
+
+    <!-- js lib -->
+    <script src="jquery-ui-1.12.1/external/jquery/jquery.js"></script>
+    <script src="jquery-ui-1.12.1/jquery-ui.min.js"></script>
+    <script src="bootstrap-3.3.7/js/bootstrap.min.js"></script>
+
+    <!-- Ros lib -->
+    <script src="js/ros/eventemitter2.min.js"></script>
+    <script src="js/ros/roslib.js"></script>
+
+    <!-- =========================== Custom libs ============================ -->
+    <!-- css lib -->
+    <link rel="stylesheet" href="css/gripper_control.css">
+
+    <!-- js lib -->
+</head>
+
+
+
+<body>
+    <div id="WifiButton">
+        <i class="fa fa-3x fa-wifi" id="WifiButton-style" aria-hidden="true" data-toggle="modal"
+            data-target="#connect_Robot">
+            <strong>TKU AI_Bot</strong>
+            <hr> </hr>
+        </i>
+    </div>
+    
+    <!-- Wifi Setting-->
+    <div class="modal fade UI_Background" id="connect_Robot" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="WifiContent-style">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title">Connect To Robot</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="RobotIPDATA" class="control-label">Robot_IP:</label>
+                            <input name="RobotIPDATA" type="text" class="form-control" id="RobotIP" value=IP.textContent>
+                        </div>
+                        <div class="form-group">
+                            <label for="RobotHostDATA" class="control-label">Robot_Host:</label>
+                            <input name="RobotHostDATA" type="text" class="form-control" id="RobotHost" value=Host.textContent>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="ros.close();">Close</button>
+                    <button type="button" class="btn btn-primary" id="send-message" onclick="RobotConnect();history.go(0);">Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div id="MF_Control" class="MF">
+        <table id="gripper_control">
+            <tbody>
+                <tr>
+                    <td>
+                        <button id="btn_Catch_all"      class="multi_finger_Control"> Catch  all     </button>
+                        <button id="btn_Loosen_all"     class="multi_finger_Control"> Loosen all     </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <button id="btn_rot2norm"       class="multi_finger_Control"> rot2norm       </button>
+                        <button id="btn_rot2parall"     class="multi_finger_Control"> rot2parall     </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <button id="btn_catch_finger1"     class="single_finger_Control">  catch_finger1      </button>
+                        <button id="btn_loosen_finger1"    class="single_finger_Control">  loosen_finger1     </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <button id="btn_catch_finger2"    class="single_finger_Control">  catch_finger2     </button>
+                        <button id="btn_loosen_finger2"   class="single_finger_Control">  loosen_finger2    </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <button id="btn_catch_finger3"    class="single_finger_Control">  catch_finger3     </button>
+                        <button id="btn_loosen_finger3"   class="single_finger_Control">  loosen_finger3    </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <button id="btn_stop_all"      class="multi_finger_Control">  STOP     </button>
+                        <button id="btn_disable_all"   class="multi_finger_Control">  DISABLE    </button>
+                    </td>
+                </tr>
+            
+            </tbody>
+        </table>
+
+
+
+    </div>  <!--  <div id="MF_Control" class="MF">   -->
+
+
+    <!-- test area -->
+    
+    
+</body>
+
+<footer>
+    <!-- ros lib -->
+    <script src="js/ros/RobotConnect.js"></script>
+    <script src="js/ros/class.js"></script>
+    <script src="js/ros/rosparam.js"></script>
+
+    <!-- lib -->
+    <script src="js/lib/CloseCenterRightButton.js"></script>
+    <script src="js/lib/CloseReverseOut.js"></script>
+    <script>
+        $("#Pbutton_table").buttonset();
+        $('input[name="Pbutton"]').click(function () {
+            $(this).tab('show');
+        });
+    </script>
+</footer>
