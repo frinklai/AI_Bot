@@ -1,4 +1,9 @@
 blueball
-clothe
+cloth
 bottle
 tap
+screw
+nut
+penholder
+pearl
+glass
