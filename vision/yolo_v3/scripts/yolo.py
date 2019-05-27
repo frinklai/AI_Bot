@@ -64,6 +64,10 @@ class YOLO(object):
         self.boxes, self.scores, self.classes = self.generate()
         self.bridge = CvBridge()
         self.cv_image = np.zeros((1024, 768, 3), np.uint8)
+        self.mtx = np.load(pth.model_data_path + 'model_data/camera_calibration_mtx.npy')
+        self.dist = np.load(pth.model_data_path + 'model_data/camera_calibration_dist.npy')
+        self.newcameramtx = np.load(pth.model_data_path + 'model_data/camera_calibration_newcameramtx.npy')
+        self.dst_roi_x, self.dst_roi_y, self.dst_roi_w, self.dst_roi_h  = np.load(pth.model_data_path + 'model_data/camera_calibration_roi.npy')
 
     def _get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -201,8 +205,12 @@ def detect_video(yolo, video_path, output_path=""):
     rospy.Subscriber("/camera/image_color", rosimage, yolo.FLIR_Callback)
     
     while not rospy.is_shutdown():
-        
-        image = Image.fromarray(yolo.cv_image)
+        un_dst_img = cv.undistort(yolo.cv_image, yolo.mtx, yolo.dist, None, yolo.newcameramtx)
+        un_dst_img = un_dst_img[yolo.dst_roi_y:yolo.dst_roi_y+yolo.dst_roi_h, \
+                    yolo.dst_roi_x:yolo.dst_roi_x+yolo.dst_roi_w]
+        image = Image.fromarray(un_dst_img)
+        # image = Image.fromarray(yolo.cv_image)
+
         image, ROI_array_recive = yolo.detect_image(image)    # receieve ROI
         
         if ROI_array_recive != None:

@@ -30,6 +30,10 @@ class Get_image():
             self.bridge = CvBridge()
             self.image = np.zeros((0,0,3), np.uint8)
             self.take_picture_counter = 0
+            self.mtx = np.load('/home/iclab-arm/AI_Bot_ws/src/AI_Bot/vision/get_image/scripts/'+'camera_calibration_mtx.npy')
+            self.dist = np.load('/home/iclab-arm/AI_Bot_ws/src/AI_Bot/vision/get_image/scripts/'+'camera_calibration_dist.npy')
+            self.newcameramtx = np.load('/home/iclab-arm/AI_Bot_ws/src/AI_Bot/vision/get_image/scripts/'+'camera_calibration_newcameramtx.npy')
+            self.dst_roi_x, self.dst_roi_y, self.dst_roi_w, self.dst_roi_h  = np.load('/home/iclab-arm/AI_Bot_ws/src/AI_Bot/vision/get_image/scripts/'+'camera_calibration_roi.npy')
 
             #s = rospy.Service("request FLIR", FLIR_image, self.service_callback)
             rospy.Subscriber("/camera/image_color", Image, self.callback)
@@ -41,11 +45,14 @@ class Get_image():
     def callback(self, image):
         try:
             self.cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
+            self.un_dst_img = cv2.undistort(self.cv_image, self.mtx, self.dist, None, self.newcameramtx)
+            self.un_dst_img = self.un_dst_img[self.dst_roi_y:self.dst_roi_y+self.dst_roi_h, \
+                    self.dst_roi_x:self.dst_roi_x+self.dst_roi_w]
         except CvBridgeError as e:
             print(e)
         cv2.namedWindow("result", cv2.WINDOW_NORMAL)
-        cv2.imshow("result", self.cv_image)
-        self.get_image(self.cv_image)
+        cv2.imshow("result", self.un_dst_img)
+        self.get_image(self.un_dst_img)
         cv2.waitKey(1)
     
     def get_image(self, crop_image):
