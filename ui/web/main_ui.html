@@ -71,56 +71,72 @@
     </div>
 
     <!-- Main Form -->
-    <div id="MF_Control" class="MF">
-        <table id="gripper_control">
-            <tbody>
-                <tr>
-                    <td>
-                        <button id="btn_Catch_all"      class="multi_finger_Control"> Catch  all     </button>
-                        <button id="btn_Loosen_all"     class="multi_finger_Control"> Loosen all     </button>
-                    </td>
-                </tr>
+    <div class="panel panel-info col-lg-3 col-md-3" style="height:600px">
+        <div id="MF_Control" class="MF">
+                <table id="gripper_control">
+                    <tbody>
+        
+                        <tr>
+                            <td>
+                                <button id="btn_catch_finger1"     class="single_finger_Control">  catch_finger1      </button>
+                                <button id="btn_loosen_finger1"    class="single_finger_Control">  loosen_finger1     </button>
+                            </td>
+                        </tr>
+        
+                        <tr>
+                            <td>
+                                <button id="btn_catch_finger2"    class="single_finger_Control">  catch_finger2     </button>
+                                <button id="btn_loosen_finger2"   class="single_finger_Control">  loosen_finger2    </button>
+                            </td>
+                        </tr>
+        
+                        <tr>
+                            <td>
+                                <button id="btn_catch_finger3"    class="single_finger_Control">  catch_finger3     </button>
+                                <button id="btn_loosen_finger3"   class="single_finger_Control">  loosen_finger3    </button>
+                            </td>
+                        </tr>
 
-                <tr>
-                    <td>
-                        <button id="btn_rot2norm"       class="multi_finger_Control"> rot2norm       </button>
-                        <button id="btn_rot2parall"     class="multi_finger_Control"> rot2parall     </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>
-                        <button id="btn_catch_finger1"     class="single_finger_Control">  catch_finger1      </button>
-                        <button id="btn_loosen_finger1"    class="single_finger_Control">  loosen_finger1     </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>
-                        <button id="btn_catch_finger2"    class="single_finger_Control">  catch_finger2     </button>
-                        <button id="btn_loosen_finger2"   class="single_finger_Control">  loosen_finger2    </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>
-                        <button id="btn_catch_finger3"    class="single_finger_Control">  catch_finger3     </button>
-                        <button id="btn_loosen_finger3"   class="single_finger_Control">  loosen_finger3    </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>
-                        <button id="btn_stop_all"      class="multi_finger_Control">  STOP     </button>
-                        <button id="btn_disable_all"   class="multi_finger_Control">  DISABLE    </button>
-                    </td>
-                </tr>
-            
-            </tbody>
-        </table>
+                        <tr>
+                            <td>
+                                <button id="btn_Connect"   > <img src="img/connect.png"> </button>
+                                <button id="btn_disable_all"  > <img src="img/disconnect.png"> </button>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <button id="btn_rot2norm"  > <img src="img/norm.png"> </button>
+                                <button id="btn_rot2parll"  > <img src="img/parll.png"> </button>
+                                <button id="btn_rot2two_finger"  > <img src="img/two_finger_mode.png"> </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button id="btn_Catch_all"   > <img src="img/parll.png"> </button>
+                                <button id="btn_Loosen_all"  > <img src="img/norm.png">  </button>
+                                <button id="btn_stop_all"    > <img src="img/stop.png"> </button>
+                            </td>
+                        </tr>
+                    
+                    </tbody>
+                </table>
+        
+        
+            </div>  <!--  <div id="MF_Control" class="MF">   -->
+    </div>
+    <!-- End of Main Form -->
 
 
-    </div>  <!--  <div id="MF_Control" class="MF">   -->
+    <div class="panel panel-info col-lg-5 col-md-5" style="height:600px">
+        <div id=DisplayTable class="Display">
+            <img src="img/system.png">
+        </div>
+    </div>
+
+    
+
+
 
 
     <!-- test area -->

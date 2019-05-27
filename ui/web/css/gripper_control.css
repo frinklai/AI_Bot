@@ -15,7 +15,7 @@
 	background-color: lightblue; 
 }*/
 
-#btn_stop_all
+/* #btn_stop_all
 {
 	margin: 10px;
 	font-size: 18px;
@@ -24,19 +24,35 @@
 	height: 40px;
 	text-align: center;
 	background-color: red;
+} */
+
+/* #btn_disable_all
+{
+	margin: 10px;
+	font-size: 18px;
+	border-radius: 30px;
+	width: 150px;
+	height: 40px;
+	text-align: center;
+	background-color: red;
+} */
+
+#btn_Connect
+{
+	width: 175px;
+	background-color: white;
 }
 
 #btn_disable_all
 {
-	margin: 10px;
-	font-size: 18px;
-	border-radius: 30px;
-	width: 150px;
-	height: 40px;
-	text-align: center;
-	background-color: red;
+	width: 175px;
+	background-color: white;
 }
-
+/* #btn_DisConnect
+{
+	width: 170px;
+	/* background-color: lightgreen; */
+} */
 /* ================================================================= */
 /* ==================== object class properties ==================== */
 /* ================================================================= */
@@ -62,3 +78,10 @@
 	background-color: lightblue;
 }
 
+
+#DisplayTable tr
+{
+	text-align: right;
+	float: right;
+	background:none;
+}
