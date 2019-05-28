@@ -39,6 +39,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "stm_server"); 
     ros::NodeHandle n; 
 
+    ros::Publisher pub_receieve_data = n.advertise <std_msgs::UInt8>("/receieve_data", 1000) ;
+    std_msgs::UInt8 receieve_data;
+
     ros::ServiceServer service = n.advertiseService("gripper_service", service_request); 
     ROS_INFO("The stm Service is Ready."); 
 
@@ -85,15 +88,15 @@ int main(int argc, char **argv)
             {
                 ser.read(r_buffer, rBUFFERSIZE);
                 ROS_INFO("[Read] Receieve gripper feedback = %d", r_buffer[0]); 
+                receieve_data.data = r_buffer[0];
+                pub_receieve_data.publish(receieve_data);
                 memset(r_buffer, 0, rBUFFERSIZE);
+                
             }
             catch (serial::IOException& e)
             {
                 ROS_ERROR_STREAM("Failed to read data!!!");
             }
-			
-
-            
         }
 		loop_rate.sleep();
     }
