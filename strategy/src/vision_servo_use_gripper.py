@@ -157,10 +157,13 @@ class stockingTask:
             # pos_y = [0.68, 0.77, 0.67]
             # pos_z = [-0.4, -0.39, -0.4]
             print('self.state == move_to_obj')
-            # posX = (729 - y)*0.000518 - 0.336
-            # posY = (1149 - x)*0.000518 + 0.35
-            posX = (706 - y)*0.000621 - 0.317
-            posY = (1044 - x)*0.000621 + 0.398
+            # posX = (706 - y)*0.000621 - 0.317
+            # posY = (1044 - x)*0.000621 + 0.398
+            
+            #20190528
+            posX = (866 - y)*0.000889 - 0.4795
+            posY = (974 - x)*0.000889 + 0.3960
+            
             self.state = busy
             self.nextState = down
             self.pos   = [round(posX, 4), round(posY, 4), -0.45]
