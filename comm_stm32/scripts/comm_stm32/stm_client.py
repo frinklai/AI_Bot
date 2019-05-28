@@ -8,7 +8,8 @@ import sys
 
 class Gripper:
     def __init__(self):
-        self.TASK_EXE_TIME = 3
+        self.CATCH_LOOSEN_WAIT_TIME  = 3
+        self.BASE_ROTATION_WAIT_TIME = 2
         self.TASK_DELAY_TIME = 0.5
 
     def Send_Gripper_Command(self, cmd_id):
@@ -18,10 +19,11 @@ class Gripper:
             resp1 = control_gripper(int(num))         
             if(cmd_id != 'Stop'):
                 rospy.loginfo("[client] Send command success, wait for gripper do task" ); 
-                if(cmd_id=='Catch_all2'):
-                    rospy.sleep(5)                      # wait for gripper complete task
+                if((cmd_id=='2D_mode')or(cmd_id=='3D_mode')):
+                    rospy.sleep(self.BASE_ROTATION_WAIT_TIME)    # base rotation, wait 2s
                 else:
-                    rospy.sleep(self.TASK_EXE_TIME)                      # wait for gripper complete task
+                    rospy.sleep(self.CATCH_LOOSEN_WAIT_TIME)     # catch or loosen, wait 3s
+
                 self.Send_Gripper_Command('Stop')        # focus stop 
                 rospy.sleep(self.TASK_DELAY_TIME)   
         
@@ -37,7 +39,6 @@ class Gripper:
     def Conver_cmd_to_id(self, cmd):
         # print("aaaaaa\n")
         if   (cmd == 'Catch_all'):      return 1
-        elif (cmd == 'Catch_all2'):     return 1 # delay 5 s
         elif (cmd == 'Loosen_all'):     return 2
 
         elif (cmd == 'Catch_no1'):      return 3
@@ -49,10 +50,11 @@ class Gripper:
         elif (cmd == 'Loosen_no3'):     return 8
         
         elif (cmd == 'Stop'):           return 0
-        elif (cmd == 'Disable'):        return 9
-        elif (cmd == 'rot_to_norm'):    return 10
-        elif (cmd == 'rot_to_parll'):   return 11
-        elif (cmd == 'aa'):             return 12
+        elif (cmd == 'Disable'):        return 9      # now useless
+        elif (cmd == '3D_mode'):        return 10
+        elif (cmd == '2D_mode'):        return 11
+        elif (cmd == '2D_catch'):       return 12
+        elif (cmd == '2D_loosen'):      return 13
         
         
 
@@ -62,7 +64,7 @@ if __name__ == '__main__':
     gripper = Gripper()
     gripper.Connect_to_Server()
     
-    gripper.Send_Gripper_Command('Loosen_all')
+    gripper.Send_Gripper_Command('Catch_all')
 
     print('Mission Complete!!!')
 
