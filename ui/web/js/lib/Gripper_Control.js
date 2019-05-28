@@ -18,14 +18,48 @@ sub_receieve_data.subscribe(function(msg)
 
 function updata_feed_back_display(receieve_data_msg)
 {
-	if(receieve_data_msg==1)
-		document.getElementById("DisplayTableimg").src = "img/number1.png";
+	if(receieve_data_msg==0)
+		document.getElementById("DisplayTableimg").src = "img/idle.png";
+
+	else if(receieve_data_msg==1)
+		document.getElementById("DisplayTableimg").src = "img/catch.png";
+
 	else if(receieve_data_msg==2)
-		document.getElementById("DisplayTableimg").src = "img/number2.png";
+		document.getElementById("DisplayTableimg").src = "img/loosen.png";
+
 	else if(receieve_data_msg==3)
-		document.getElementById("DisplayTableimg").src = "img/number3.png";
-	else if(receieve_data_msg==0)
+		document.getElementById("DisplayTableimg").src = "img/finger1_catch.png";
+
+	else if(receieve_data_msg==4)
+		document.getElementById("DisplayTableimg").src = "img/finger2_catch.png";
+
+	else if(receieve_data_msg==5)
+		document.getElementById("DisplayTableimg").src = "img/finger3_catch.png";
+
+	else if(receieve_data_msg==6)
+		document.getElementById("DisplayTableimg").src = "img/finger1_loosen.png";
+
+	else if(receieve_data_msg==7)
+		document.getElementById("DisplayTableimg").src = "img/finger2_loosen.png";
+
+	else if(receieve_data_msg==8)
+		document.getElementById("DisplayTableimg").src = "img/finger3_loosen.png";
+
+	else if(receieve_data_msg==9)
 		document.getElementById("DisplayTableimg").src = "img/system.png";
+
+	else if(receieve_data_msg==10)
+		document.getElementById("DisplayTableimg").src = "img/3D_mode.png";
+
+	else if(receieve_data_msg==11)
+		document.getElementById("DisplayTableimg").src = "img/drag_mode.png";
+
+	else if(receieve_data_msg==12)
+		document.getElementById("DisplayTableimg").src = "img/catch.png";
+	
+	else if(receieve_data_msg==13)
+		document.getElementById("DisplayTableimg").src = "img/loosen.png";
+
 }
 
 
@@ -35,7 +69,8 @@ var gripper_control_client = new ROSLIB.Service({
     serviceType : 'comm_stm32/gripper_cmd'
 });
 
-var GRIPPER_CMD_WAIT_TIME = 3000
+var CATCH_LOOSEN_WAIT_TIME  = 3000;
+var BASE_ROTATION_WAIT_TIME = 2000;
 function send_gripper_cmd(id)
 {
 	var request = new ROSLIB.ServiceRequest
@@ -47,10 +82,13 @@ function send_gripper_cmd(id)
 		var is_success = res.success;
 	});
 
-	if(id!=0) //stop
+	if((id!=0)&&(id!=5)&&(id!=13)) //stop
 	{
 		// wait 'GRIPPER_CMD_WAIT_TIME' ms, then run function -> $("#btn_stop_all").click(); 
-		setTimeout(function(){$("#btn_stop_all").click();}, GRIPPER_CMD_WAIT_TIME);  
+		if((id==10)||(id==11))
+			setTimeout(function(){$("#btn_stop_all").click();}, BASE_ROTATION_WAIT_TIME);    // base rotation, wait 2s
+		else
+			setTimeout(function(){$("#btn_stop_all").click();}, CATCH_LOOSEN_WAIT_TIME);  	 // catch or loosen, wait 3s
 	}
 }
 
@@ -58,13 +96,40 @@ function send_gripper_cmd(id)
 $("#btn_Catch_all").click(function()
 {
 	send_gripper_cmd(1)
-    console.log('click btn_Catch_all');
+	console.log('click btn_Catch_all');
 });
 
 $("#btn_Loosen_all").click(function()
 {
 	send_gripper_cmd(2)
-    console.log('click btn_Loosen_all');
+	console.log('click btn_Loosen_all');
+});
+
+$("#btn_2D_Catch").click(function()
+{
+	send_gripper_cmd(12) 
+	console.log('click btn_2D_Catch');
+});
+
+$("#btn_2D_Loosen").click(function()
+{
+	send_gripper_cmd(13)  											 					// loosen 2 finger
+	setTimeout(function(){$("#btn_stop_all").click();}, CATCH_LOOSEN_WAIT_TIME);  	 // catch or loosen, wait 3s
+	console.log('click btn_2D_Loosen');
+});
+
+$("#btn_3D_catch_to_2D").click(function()
+{
+	send_gripper_cmd(5)  // when 											 					// Catch finger 3
+	setTimeout(function(){$(send_gripper_cmd(12)).click();}, CATCH_LOOSEN_WAIT_TIME);  // Catch 2 finger
+	console.log('click btn_2D_Catch');
+});
+
+$("#btn_2D_Loosen_to_3D").click(function()
+{
+	send_gripper_cmd(13)  											 					// loosen 2 finger
+	setTimeout(function(){$(send_gripper_cmd(8)).click();}, CATCH_LOOSEN_WAIT_TIME);   // loosen finger 3
+	console.log('click btn_2D_Loosen');
 });
 
 // ================== rotate gripper base ==================
@@ -72,18 +137,18 @@ $("#btn_Loosen_all").click(function()
 $("#btn_rot2norm").click(function()
 {
 	send_gripper_cmd(10)
-    console.log('click btn_rot2norm');
+	console.log('click btn_rot2norm');
 });
 
 $("#btn_rot2parll").click(function()
 {
 	send_gripper_cmd(11)
-    console.log('click btn_rot2parll');
+	console.log('click btn_rot2parll');
 });
 
 $("#btn_rot2two_finger").click(function()
 {
-	send_gripper_cmd(12)
+	// send_gripper_cmd(12)
     console.log('click btn_rot2two_finger');
 });
 
@@ -103,7 +168,8 @@ $("#btn_catch_finger2").click(function()
 $("#btn_catch_finger3").click(function()
 {
 	send_gripper_cmd(5)
-    console.log('click btn_catch_finger3');
+	console.log('click btn_catch_finger31');
+	setTimeout(function(){$("#btn_stop_all").click();}, CATCH_LOOSEN_WAIT_TIME);  
 });
 
 $("#btn_loosen_finger1").click(function()
@@ -128,7 +194,7 @@ $("#btn_loosen_finger3").click(function()
 $("#btn_stop_all").click(function()
 {
 	send_gripper_cmd(0)
-    console.log('click btn_stop_all');
+	console.log('click btn_stop_all');
 });
 
 $("#btn_disable_all").click(function()
@@ -139,5 +205,6 @@ $("#btn_disable_all").click(function()
 $("#btn_Connect").click(function()
 {
 	location.reload(true);
-    console.log('click connect');
+	console.log('click connect');
+	document.getElementById("DisplayTableimg").src = "img/idle.png";
 });

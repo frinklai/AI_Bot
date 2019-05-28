@@ -90,7 +90,6 @@
         <div id="MF_Control" class="MF">
                 <table id="gripper_control">
                     <tbody>
-        
                         <tr>
                             <td>
                                 <button id="btn_catch_finger1"     class="single_finger_Control">  catch_finger1      </button>
@@ -114,13 +113,27 @@
 
                         <tr>
                             <td>
+                                <button id="btn_2D_Catch"         class="multi_finger_Control">  2D Catch    </button>
+                                <button id="btn_2D_Loosen"        class="multi_finger_Control">  2D Loosen    </button>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                <button id="btn_3D_catch_to_2D"         class="multi_finger_Control">  catch_to_2D    </button>
+                                <button id="btn_2D_Loosen_to_3D"        class="multi_finger_Control">  Loosen_to_3D    </button>
+                            </td>
+                        </tr>
+
+                        <!-- <tr>
+                            <td>
                                 <button id="btn_Connect"   > <img src="img/connect.png"> </button>
                                 <button id="btn_disable_all"  > <img src="img/disconnect.png"> </button>
                             </td>
-                        </tr>
+                        </tr> -->
                         
-                        <tr>
-                            <td>
+                        <tr> 
+                            <td><BR>
                                 <button id="btn_rot2norm"  > <img src="img/norm.png"> </button>
                                 <button id="btn_rot2parll"  > <img src="img/parll.png"> </button>
                                 <button id="btn_rot2two_finger"  > <img src="img/two_finger_mode.png"> </button>
@@ -146,7 +159,7 @@
     <!-- Gripper Feedback Form -->
     <div class="panel panel-info col-lg-5 col-md-5" style="height:550px">
         <div id=DisplayTable class="Display">
-            <img id = DisplayTableimg src="img/system.png">
+            <img id = DisplayTableimg src="img/idle.png">
         </div>
     </div>
     <!-- End of Gripper Feedback Form -->

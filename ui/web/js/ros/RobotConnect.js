@@ -23,14 +23,17 @@ var ros = new ROSLIB.Ros({
 //confirm_connect
 ros.on('connection', function() {
     console.log('Robot1 Connected to websocket server.');
+    document.getElementById("DisplayTableimg").src = "img/idle.png";
     document.getElementById('WifiButton-style').style.color = '#e3ae59'
 });
 ros.on('error', function(error) {
     console.log('Robot1 Error connecting to websocket server:');
+    document.getElementById("DisplayTableimg").src = "img/system.png";
     document.getElementById('WifiButton-style').style.color = 'rgba(255,0,0)'
 });
 ros.on('close', function() {
     console.log('Robot1 Connection to websocket server closed.');
+    document.getElementById("DisplayTableimg").src = "img/system.png";
     document.getElementById('WifiButton-style').style.color = 'rgba(255,0,0)'
 });
 
