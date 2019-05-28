@@ -4,18 +4,29 @@
 // ROS for this UI
 // -----------------------------------//
 
-// var status_sub = new ROSLIB.Topic({
-// 	ros:ros,
-// 	name: '/robotis/status',
-// 	messageType : 'robotis_controller_msgs/StatusMsg'
-// });
+var sub_receieve_data = new ROSLIB.Topic({
+	ros:ros,
+	name: '/receieve_data',
+	messageType : 'std_msgs/UInt8'
+});
 
-// status_sub.subscribe(function(msg){
-// 	if(msg.status_msg=="End Trajectory"){
-// 		l('in End Trajectory');
-// 		next_command();
-// 	}
-// });
+sub_receieve_data.subscribe(function(msg)
+{
+	console.log('click receieve_data');
+	updata_feed_back_display(msg.data)
+});
+
+function updata_feed_back_display(receieve_data_msg)
+{
+	if(receieve_data_msg==1)
+		document.getElementById("DisplayTableimg").src = "img/number1.png";
+	else if(receieve_data_msg==2)
+		document.getElementById("DisplayTableimg").src = "img/number2.png";
+	else if(receieve_data_msg==3)
+		document.getElementById("DisplayTableimg").src = "img/number3.png";
+	else if(receieve_data_msg==0)
+		document.getElementById("DisplayTableimg").src = "img/system.png";
+}
 
 
 var gripper_control_client = new ROSLIB.Service({
@@ -24,7 +35,7 @@ var gripper_control_client = new ROSLIB.Service({
     serviceType : 'comm_stm32/gripper_cmd'
 });
 
-var GRIPPER_CMD_WAIT_TIME = 300
+var GRIPPER_CMD_WAIT_TIME = 3000
 function send_gripper_cmd(id)
 {
 	var request = new ROSLIB.ServiceRequest
