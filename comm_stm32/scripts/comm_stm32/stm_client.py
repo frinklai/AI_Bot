@@ -6,13 +6,14 @@ from std_msgs.msg import UInt8
 import rospy
 import sys
 
+DEF_CATCH_LOOSEN_WAIT_TIME = 3
 class Gripper:
     def __init__(self):
-        self.CATCH_LOOSEN_WAIT_TIME  = 3
+        self.CATCH_LOOSEN_WAIT_TIME  = DEF_CATCH_LOOSEN_WAIT_TIME
         self.BASE_ROTATION_WAIT_TIME = 2
         self.TASK_DELAY_TIME = 0.5
 
-    def Send_Gripper_Command(self, cmd_id):
+    def Send_Gripper_Command(self, cmd_id, catch_loosen_delay_time = DEF_CATCH_LOOSEN_WAIT_TIME):
         num = self.Conver_cmd_to_id(cmd_id)
         try:
             control_gripper = rospy.ServiceProxy('gripper_service', gripper_cmd)    
@@ -22,7 +23,7 @@ class Gripper:
                 if((cmd_id=='2D_mode')or(cmd_id=='3D_mode')):
                     rospy.sleep(self.BASE_ROTATION_WAIT_TIME)    # base rotation, wait 2s
                 else:
-                    rospy.sleep(self.CATCH_LOOSEN_WAIT_TIME)     # catch or loosen, wait 3s
+                    rospy.sleep(catch_loosen_delay_time)     # catch or loosen, wait 3s
 
                 self.Send_Gripper_Command('Stop')        # focus stop 
                 rospy.sleep(self.TASK_DELAY_TIME)   
@@ -64,7 +65,7 @@ if __name__ == '__main__':
     gripper = Gripper()
     gripper.Connect_to_Server()
     
-    gripper.Send_Gripper_Command('Catch_all')
+    gripper.Send_Gripper_Command('Catch_all', 3)    # delay 3s after send command
 
     print('Mission Complete!!!')
 
