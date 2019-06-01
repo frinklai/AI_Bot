@@ -1,4 +1,4 @@
-blueball
+red_square
 cloth
 bottle
 tap
@@ -7,3 +7,4 @@ nut
 penholder
 pearl
 glass
+square
