@@ -235,7 +235,7 @@ def detect_video(yolo, video_path, output_path=""):
         
         result = np.asarray(image)
 
-        bounding_point = [[405, 25], [1440, 25], [1440, 982], [405, 982]]
+        bounding_point = [[638, 156], [1188, 156], [1188, 811], [638, 811]]
         line_color = [(255, 0, 0), (255, 0, 0), (255, 0, 0), (255, 0, 0)]
         line_thickness = 5
 
