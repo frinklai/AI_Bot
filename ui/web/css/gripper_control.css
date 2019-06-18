@@ -37,6 +37,42 @@
 	background-color: red;
 } */
 
+ #btn_Catch_all
+{
+    /* margin: 10px; */
+	font-size: 26px;
+	/* border-radius: 0px; */
+	border-style: ridge;
+	width: 120px;
+	height: 60px;
+	text-align: center;
+	background-color: yellow; 
+}
+
+#btn_Loosen_all
+{
+    /* margin: 10px; */
+	font-size: 26px;
+	/* border-radius: 0px; */
+	border-style: ridge;
+	width: 120px;
+	height: 60px;
+	text-align: center;
+	background-color: yellow;
+}
+
+#btn_stop_all
+{
+    /* margin: 10px; */
+	font-size: 26px;
+	/* border-radius: 0px; */
+	border-style: ridge;
+	width: 120px;
+	height: 60px;
+	text-align: center;
+	background-color: red; 
+}
+
 #sub_Title_Board1 
 {
 	text-align: center;
