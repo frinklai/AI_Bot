@@ -20,7 +20,7 @@ count   = 0
 box_cnt = 1
 
 PICKORDER = 0
-SPEED_L     = 20
+SPEED_L     = 30
 
 idle            = 0
 busy            = 1
@@ -95,7 +95,7 @@ class stockingTask:
         if self.name == 'left':
             self.is_right = -1
             self.speed = SPEED_L
-            self.faster_speed = 30
+            self.faster_speed = 40
         self.init_pub_sub()
         if self.en_sim:
             self.suction = SuctionTask(self.name + '_gazebo')
