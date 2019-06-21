@@ -10,23 +10,49 @@ from math import degrees
 
 import time
 import rospy
-from std_msgs.msg import Bool, Int32
+from std_msgs.msg import Bool, Int32, String, Empty
 from arm_control  import ArmTask, SuctionTask
 
 import yaml
 import rospkg
 rospack = rospkg.RosPack()
 g_path2package = rospack.get_path('dope')
+from geometry_msgs.msg import PoseStamped
+
+
 
 class stockingTask:
-    def __init__(self, _name = '/robotis'):
+    def __init__(self, _name = '/robotis',_params=None):
         """Initial object."""
         self.name = _name
         self.arm = ArmTask(self.name + '_arm')
+        self.params = _params
+
         self.pos   = [0, 0, 0]
         self.euler = [0, 0, 0]
         self.phi   = 0
+        self.init_sub()
 
+    def init_sub(self):
+        for model in params['weights']:
+            self.create_sub('/{}/pose_{}'.format(params['topic_publishing'], model),model)
+
+
+    def create_sub(self,topic,model):
+        sub_cb={}
+        sub={}
+        print(topic)
+
+        sub_cb[model]=self.pose_cb
+        sub[model] = \
+            rospy.Subscriber(
+                topic, 
+                PoseStamped, 
+                sub_cb[model]
+            )
+            
+    def pose_cb(self, data):
+        print(data)
     
     def init_pub_sub(self):
         # rospy.Subscriber('/object/ROI_array', ROI_array, self.get_obj_info_cb)
@@ -115,18 +141,20 @@ if __name__ == '__main__':
             print('    Parameters loaded.')
         except yaml.YAMLError as exc:
             print(exc)
+
     #ros part
     rospy.init_node('Planning', anonymous=True)
     
-    left  = stockingTask('left')       # Set up left arm controller
+    left  = stockingTask('left',params)       # Set up left arm controller
     rospy.sleep(.3)
 
     rate = rospy.Rate(50)
 
     while not rospy.is_shutdown():
         try:
+            a=1+1
             # left.process()
-            print("debug")
+            # print("debug")
         except rospy.ROSInterruptException:
             print('error')
             pass
