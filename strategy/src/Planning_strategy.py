@@ -19,7 +19,16 @@ rospack = rospkg.RosPack()
 g_path2package = rospack.get_path('dope')
 from geometry_msgs.msg import PoseStamped
 
+class Multi_subscriber():
+    def __init__(self,_model,_type):
+        self.model = _model
+        self.feedback = _type()
 
+    def sub_cp(self,data):
+        self.feedback=data
+
+    def get_data(self):
+        return self.feedback
 
 class stockingTask:
     def __init__(self, _name = '/robotis',_params=None):
@@ -31,33 +40,32 @@ class stockingTask:
         self.pos   = [0, 0, 0]
         self.euler = [0, 0, 0]
         self.phi   = 0
+        
+        self.model_list = params['weights']
+        self.sub_cb={}
+        self.sub={}
         self.init_sub()
-
+    
+    #======================initial subscriber======================
     def init_sub(self):
-        for model in params['weights']:
+        for model in self.model_list:
             self.create_sub('/{}/pose_{}'.format(params['topic_publishing'], model),model)
 
 
     def create_sub(self,topic,model):
-        sub_cb={}
-        sub={}
-        print(topic)
-
-        sub_cb[model]=self.pose_cb
-        sub[model] = \
+        self.sub_cb[model]=Multi_subscriber(model,PoseStamped)
+        self.sub[model] = \
             rospy.Subscriber(
                 topic, 
                 PoseStamped, 
-                sub_cb[model]
+                self.sub_cb[model].sub_cp
             )
-            
-    def pose_cb(self, data):
-        print(data)
-    
-    def init_pub_sub(self):
-        # rospy.Subscriber('/object/ROI_array', ROI_array, self.get_obj_info_cb)
-        print("1")
-
+    #==============================================================
+    def testing(self):
+        for model in self.model_list:
+            showoff = self.sub_cb[model].get_data()
+            print(showoff)
+    #==============================================================
     def process(self):
         if self.arm.is_stop:
             self.finish =  True
@@ -154,7 +162,7 @@ if __name__ == '__main__':
         try:
             a=1+1
             # left.process()
-            # print("debug")
+            left.testing()
         except rospy.ROSInterruptException:
             print('error')
             pass
