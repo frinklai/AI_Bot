@@ -6,6 +6,7 @@
 import os
 import sys
 import copy
+import math
 from math import degrees
 
 import time
@@ -17,7 +18,7 @@ import yaml
 import rospkg
 rospack = rospkg.RosPack()
 g_path2package = rospack.get_path('dope')
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped,Point
 
 #=================state define==================
 idle            = 0
@@ -56,7 +57,6 @@ class stockingTask:
         """Initial object."""
         self.en_sim = False
         if len(sys.argv) >= 2:
-            print(type(sys.argv[1]))
             if sys.argv[1] == 'True':
                 rospy.set_param('self.en_sim', sys.argv[1])
                 self.en_sim = rospy.get_param('self.en_sim')
@@ -70,6 +70,14 @@ class stockingTask:
         self.pos   = [0, 0, 0]
         self.euler = [0, 0, 0]
         self.phi   = 0
+
+
+        self.ori_point = Point()
+        self.ori_point.x, self.ori_point.y, self.ori_point.z = 0.0,0.0,0.0
+        self.limit_min_x,self.limit_max_x = -10,10
+        self.limit_min_y,self.limit_max_y = -10,10
+        self.limit_min_z,self.limit_max_z = 80,90
+        # self.target={}
 
         self.arm = ArmTask(self.name + '_arm')
         if self.name == 'left':
@@ -104,14 +112,32 @@ class stockingTask:
                 self.sub_cb[model].sub_cp
             )
     #==============================================================
-    def testing(self):
+    def choose_target(self):
+        index = 0
+        target={}
         for model in self.model_list:
-            showoff = self.sub_cb[model].get_data()
-            if showoff is not None:
-                print(showoff)
-            else:
-                print(showoff)
+            if self.sub_cb[model].get_data() is not None:
+                if self.limit_min_x < self.sub_cb[model].get_data().pose.position.x <=self.limit_max_x:
+                    if self.limit_min_y < self.sub_cb[model].get_data().pose.position.y <=self.limit_max_y:
+                        if self.limit_min_z < self.sub_cb[model].get_data().pose.position.z <=self.limit_max_z:
+                            if index == 0 :
+                                target["name"] = model
+                                target["location"] = self.sub_cb[model].get_data().pose.position
+                                target["pose"] = self.sub_cb[model].get_data().pose.orientation
+                                target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
+                            if self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position) < target["distance"]:
+                                target["name"] = model
+                                target["location"] = self.sub_cb[model].get_data().pose.position
+                                target["pose"] = self.sub_cb[model].get_data().pose.orientation
+                                target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
+            index = index+1
             self.sub_cb[model].shut_flag()
+            if target == {}:
+                return None
+            return target
+
+    def threeD_distance(self,A_point,B_point):
+        return math.sqrt(  (pow(abs(A_point.x-B_point.x),2)) + (pow(abs(A_point.y-B_point.y),2)) + (pow(abs(A_point.z-B_point.z),2))  )
     #==============================================================
     def test_process(self):
         if self.arm.is_stop:
@@ -181,23 +207,7 @@ class stockingTask:
         Arm_posX = (866 - Camera_Image_Y)*0.000889 - 0.4795     
         Arm_posY = (974 - Camera_Image_X)*0.000889 + 0.3960     
         return Arm_posX, Arm_posY
-
-
     #-------------------------------------------------------------------------------
-    def get_obj_info_cb(self, data):
-        self.img_data = ROI()
-        self.img_data_list = data.ROI_list
-        #print("Detected object number = " + str(len(data.ROI_list)))
-        for i in range(len(data.ROI_list)):
-            #if (data.ROI_list[i].min_x > 400) and (data.ROI_list[i].min_y) > 20 and (data.ROI_list[i].Max_x < 1440) and (data.ROI_list[i].Max_y < 990):
-            self.img_data.object_name = data.ROI_list[i].object_name
-            self.img_data.score       = data.ROI_list[i].score
-            self.img_data.min_x = data.ROI_list[i].min_x
-            self.img_data.min_y = data.ROI_list[i].min_y
-            self.img_data.Max_x = data.ROI_list[i].Max_x
-            self.img_data.Max_y = data.ROI_list[i].Max_y
-            return self.img_data
-
 
 if __name__ == '__main__':
     #input yaml part
@@ -227,7 +237,7 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         try:
             # left.process()
-            left.testing()
+            left.test_process
         except rospy.ROSInterruptException:
             print('error')
             pass
