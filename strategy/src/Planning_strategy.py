@@ -19,32 +19,75 @@ rospack = rospkg.RosPack()
 g_path2package = rospack.get_path('dope')
 from geometry_msgs.msg import PoseStamped
 
+#=================state define==================
+idle            = 0
+busy            = 1
+initPose        = 2             #(第一個動作)
+
+
+
+SPEED_L     = 30
+#===============================================
 class Multi_subscriber():
     def __init__(self,_model,_type):
         self.model = _model
         self.feedback = _type()
+        self.flag = False
 
     def sub_cp(self,data):
+        print("get data from subscriber")
         self.feedback=data
+        self.flag = True
 
     def get_data(self):
-        return self.feedback
+        if self.flag == True:
+            # print("return data")
+            return self.feedback
+        else:
+            # print("return None")
+            return None
+    
+    def shut_flag(self):
+        self.feedback=None
+        self.flag = False
 
 class stockingTask:
     def __init__(self, _name = '/robotis',_params=None):
         """Initial object."""
+        self.en_sim = False
+        if len(sys.argv) >= 2:
+            print(type(sys.argv[1]))
+            if sys.argv[1] == 'True':
+                rospy.set_param('self.en_sim', sys.argv[1])
+                self.en_sim = rospy.get_param('self.en_sim')
+        
         self.name = _name
-        self.arm = ArmTask(self.name + '_arm')
-        self.params = _params
+        self.state = initPose
+        self.nowState = initPose 
+        self.nextState = idle
 
+        self.params = _params
         self.pos   = [0, 0, 0]
         self.euler = [0, 0, 0]
         self.phi   = 0
+
+        self.arm = ArmTask(self.name + '_arm')
+        if self.name == 'left':
+            self.is_right = -1
+            self.speed = SPEED_L
+            self.faster_speed = 40
+        if self.en_sim:
+            self.suction = SuctionTask(self.name + '_gazebo')
+        else:
+            self.suction = SuctionTask(self.name)
+
         
         self.model_list = params['weights']
         self.sub_cb={}
         self.sub={}
         self.init_sub()
+
+        
     
     #======================initial subscriber======================
     def init_sub(self):
@@ -64,8 +107,31 @@ class stockingTask:
     def testing(self):
         for model in self.model_list:
             showoff = self.sub_cb[model].get_data()
-            print(showoff)
+            if showoff is not None:
+                print(showoff)
+            else:
+                print(showoff)
+            self.sub_cb[model].shut_flag()
     #==============================================================
+    def test_process(self):
+        if self.arm.is_stop:
+            self.finish =  True
+            print('!!! Robot is stop !!!')                         
+            return  
+
+        if self.state == idle:
+            if self.finish:
+                return    
+
+        if self.state == busy:
+            if self.arm.is_busy:
+                return
+            else:
+                self.state    = self.nextState
+                self.nowState = self.nextState
+                return  
+
+
     def process(self):
         if self.arm.is_stop:
             self.finish =  True
@@ -160,7 +226,6 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         try:
-            a=1+1
             # left.process()
             left.testing()
         except rospy.ROSInterruptException:
