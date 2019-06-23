@@ -23,9 +23,16 @@ from geometry_msgs.msg import PoseStamped,Point
 #=================state define==================
 idle            = 0
 busy            = 1
-initPose        = 2             #(第一個動作)
-
-
+initPose        = 2             #(1st movement)
+M_Target_Top    = 3             #(2nd movement)
+FM_Tool         = 4             #(3rd movement)
+Enable_Sucker   = 5             #(4th movement)
+RM_Close_Target = 6             #(5th movement)
+RM_Leave_Target = 7             #(6th movement)
+M_Answer        = 8             #(7th movement)
+RM_Put_down     = 9             #(8th movement)
+Disable_Sucker  = 10            #(9th movement)
+M_Pull_up       = 11            #(10th movement)
 
 SPEED_L     = 30
 #===============================================
@@ -36,7 +43,6 @@ class Multi_subscriber():
         self.flag = False
 
     def sub_cp(self,data):
-        print("get data from subscriber")
         self.feedback=data
         self.flag = True
 
@@ -157,6 +163,119 @@ class stockingTask:
                 self.nowState = self.nextState
                 return  
 
+        #(1st movement) Move Home point
+        elif self.state == initPose:
+            print('1st:self.state == initPose')
+            self.state = busy
+            #self.nextState = wait_img_pos
+            self.arm.set_speed(self.speed)
+            # self.pos   = [0.4, 0.5, -0.3]
+            # self.euler = [0, 0, 0]
+            # self.phi = 0
+            self.nextState = M_Target_Top
+            self.pos   = [0.48, 0.25, -0.4]
+            self.euler = [0, 0, 0]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)  
+
+        #(2nd movement) Move Tartget Top Point
+        elif self.state == M_Target_Top:
+            print('2nd:self.state == M_Target_Top')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = FM_Tool
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(3rd movement) Fine Tune Tool's position
+        elif self.state == FM_Tool:
+            print('3rd:self.state == FM_Tool')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = Enable_Sucker
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(4th movement) Enable Sucker
+        elif self.state == Enable_Sucker:
+            print('4th:self.state == Enable_Sucker')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = RM_Close_Target
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(5th movement) Relative move close to target
+        elif self.state == RM_Close_Target:
+            print('5th:self.state == RM_Close_Target')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = RM_Leave_Target
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(6th movement) Relative move far to target
+        elif self.state == RM_Leave_Target:
+            print('6th:self.state == RM_Leave_Target')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = M_Answer
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(7th movement) Move Answer Place
+        elif self.state == M_Answer:
+            print('7th:self.state == M_Answer')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = RM_Put_down
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(8th movement) Move Put it down
+        elif self.state == RM_Put_down:
+            print('8th:self.state == RM_Put_down')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = Disable_Sucker
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+
+        #(9th movement) Disable Sucker
+        elif self.state == Disable_Sucker:
+            print('9th:self.state == Disable_Sucker')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = M_Pull_up
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
+        
+        #(10th movement) Move Pull up Tool
+        elif self.state == M_Pull_up:
+            print('10th:self.state == M_Pull_up')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = initPose
+            self.pos   = [0.4, 0.42, -0.63]
+            self.euler = [0, 0, 90]
+            self.phi = 90
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
 
     def process(self):
         if self.arm.is_stop:
@@ -237,7 +356,7 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         try:
             # left.process()
-            left.test_process
+            left.test_process()
         except rospy.ROSInterruptException:
             print('error')
             pass
