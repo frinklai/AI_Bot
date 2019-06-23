@@ -191,7 +191,7 @@ class ArmTask:
         quaternion = tf.transformations.quaternion_from_euler(-pitch+pi, -yaw, roll-pi, 'ryxz')
         return (quaternion)
 
-    def ikMove(self, mode='line', pos=_POS, euler=_ORI, phi=_PHI):
+    def ikMove(self, mode='line', pos=_POS, euler=_ORI, phi=_PHI,quater = None):
         """Publish msg of ik cmd (deg) to manager node."""
         roll, pitch, yaw = euler
         roll  = roll * pi/ 180
@@ -205,8 +205,10 @@ class ArmTask:
         msg.pose.position.x = pos[0]
         msg.pose.position.y = pos[1]
         msg.pose.position.z = pos[2]
-
+        
         quaternion = self.euler2quaternion((roll, pitch, yaw))
+        if quater is not None:
+            quaternion = [np.float64(quater.x),np.float64(quater.y),np.float64(quater.z),np.float64(quater.w)]
         msg.pose.orientation.x = quaternion[0]
         msg.pose.orientation.y = quaternion[1]
         msg.pose.orientation.z = quaternion[2]

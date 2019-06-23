@@ -35,6 +35,8 @@ Disable_Sucker  = 10            #(9th movement)
 M_Pull_up       = 11            #(10th movement)
 
 SPEED_L     = 30
+
+target_object = {}
 #===============================================
 class Multi_subscriber():
     def __init__(self,_model,_type):
@@ -129,11 +131,13 @@ class stockingTask:
                             if index == 0 :
                                 target["name"] = model
                                 target["location"] = self.sub_cb[model].get_data().pose.position
+                                target["world_location"] = self.transform_2_world(self.sub_cb[model].get_data().pose.position)
                                 target["pose"] = self.sub_cb[model].get_data().pose.orientation
                                 target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
                             if self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position) < target["distance"]:
                                 target["name"] = model
                                 target["location"] = self.sub_cb[model].get_data().pose.position
+                                target["world_location"] = self.transform_2_world(self.sub_cb[model].get_data().pose.position)
                                 target["pose"] = self.sub_cb[model].get_data().pose.orientation
                                 target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
             index = index+1
@@ -144,8 +148,13 @@ class stockingTask:
 
     def threeD_distance(self,A_point,B_point):
         return math.sqrt(  (pow(abs(A_point.x-B_point.x),2)) + (pow(abs(A_point.y-B_point.y),2)) + (pow(abs(A_point.z-B_point.z),2))  )
+    
+    def transform_2_world(self,location):
+        #something about transform coordination to world coordination
+        return location
     #==============================================================
     def test_process(self):
+        global target_object
         if self.arm.is_stop:
             self.finish =  True
             print('!!! Robot is stop !!!')                         
@@ -167,11 +176,7 @@ class stockingTask:
         elif self.state == initPose:
             print('1st:self.state == initPose')
             self.state = busy
-            #self.nextState = wait_img_pos
             self.arm.set_speed(self.speed)
-            # self.pos   = [0.4, 0.5, -0.3]
-            # self.euler = [0, 0, 0]
-            # self.phi = 0
             self.nextState = M_Target_Top
             self.pos   = [0.48, 0.25, -0.4]
             self.euler = [0, 0, 0]
@@ -181,10 +186,15 @@ class stockingTask:
         #(2nd movement) Move Tartget Top Point
         elif self.state == M_Target_Top:
             print('2nd:self.state == M_Target_Top')
-            self.arm.set_speed(self.faster_speed)
+            target_object = self.choose_target()
+            if target_object == None:
+                print("No object detected")
+                return
+            print("selected {} model to pick".format(target_object["name"]))
+            self.arm.set_speed(self.speed)
             self.state = busy
             self.nextState = FM_Tool
-            self.pos   = [0.4, 0.42, -0.63]
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, target_object["world_location"].z]
             self.euler = [0, 0, 90]
             self.phi = 90
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
@@ -195,21 +205,24 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = Enable_Sucker
-            self.pos   = [0.4, 0.42, -0.63]
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, target_object["world_location"].z]
             self.euler = [0, 0, 90]
             self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.quater = target_object["pose"]
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi, quater = self.quater)
 
         #(4th movement) Enable Sucker
         elif self.state == Enable_Sucker:
             print('4th:self.state == Enable_Sucker')
+            # self.suction.gripper_vaccum_on()
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = RM_Close_Target
-            self.pos   = [0.4, 0.42, -0.63]
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, target_object["world_location"].z]
             self.euler = [0, 0, 90]
             self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.quater = target_object["pose"]
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi, quater = self.quater)
 
         #(5th movement) Relative move close to target
         elif self.state == RM_Close_Target:
@@ -217,6 +230,7 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = RM_Leave_Target
+            # ask need use tool coordinate
             self.pos   = [0.4, 0.42, -0.63]
             self.euler = [0, 0, 90]
             self.phi = 90
@@ -228,6 +242,7 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = M_Answer
+            # ask need use tool coordinate
             self.pos   = [0.4, 0.42, -0.63]
             self.euler = [0, 0, 90]
             self.phi = 90
@@ -258,6 +273,7 @@ class stockingTask:
         #(9th movement) Disable Sucker
         elif self.state == Disable_Sucker:
             print('9th:self.state == Disable_Sucker')
+            # self.suction.gripper_vaccum_off()
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = M_Pull_up
