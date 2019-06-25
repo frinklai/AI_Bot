@@ -8,6 +8,7 @@ import sys
 import copy
 import math
 from math import degrees
+import numpy as np
 
 import time
 import rospy
@@ -85,6 +86,14 @@ class stockingTask:
         self.limit_min_x,self.limit_max_x = -10,10
         self.limit_min_y,self.limit_max_y = -10,10
         self.limit_min_z,self.limit_max_z = 80,90
+        
+        #set the transformer and rotation for coordination
+        self.trans_x = 1
+        self.trans_y = 1
+        self.trans_z = 1
+        self.rot_x_axis = 90
+        self.rot_y_axis = 0
+        self.rot_z_axis = 0
         # self.target={}
 
         self.arm = ArmTask(self.name + '_arm')
@@ -132,6 +141,7 @@ class stockingTask:
                                 target["name"] = model
                                 target["location"] = self.sub_cb[model].get_data().pose.position
                                 target["world_location"] = self.transform_2_world(self.sub_cb[model].get_data().pose.position)
+                                print(target["world_location"])
                                 target["pose"] = self.sub_cb[model].get_data().pose.orientation
                                 target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
                             if self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position) < target["distance"]:
@@ -150,8 +160,48 @@ class stockingTask:
         return math.sqrt(  (pow(abs(A_point.x-B_point.x),2)) + (pow(abs(A_point.y-B_point.y),2)) + (pow(abs(A_point.z-B_point.z),2))  )
     
     def transform_2_world(self,location):
-        #something about transform coordination to world coordination
+        loca = np.array([[location.x],
+                         [location.y],
+                         [location.z],
+                         [1]])
+        trans = self.transform(self.trans_x,self.trans_y,self.trans_z)
+        rota_x = self.Rotation('x',self.rot_x_axis)
+        rota_y = self.Rotation('y',self.rot_y_axis)
+        rota_z = self.Rotation('z',self.rot_z_axis)
+
+        loca = np.dot(trans,loca)
+        loca = np.dot(rota_x,loca)
+        loca = np.dot(rota_y,loca)
+        loca = np.dot(rota_z,loca)
+
+        location.x = loca[0]
+        location.y = loca[1]
+        location.z = loca[2]
         return location
+    
+    def transform(self, x, y, z):
+        return np.array([[1, 0, 0, x],
+                         [0, 1, 0, y],
+                         [0, 0, 1, z],
+                         [0, 0, 0, 1]])
+    
+    def Rotation(self,axis, deg):
+        deg = deg * math.pi/180
+        if axis == 'x':
+            return [[1              ,0             , 0            ,    0],
+                    [0              ,math.cos(deg) , math.sin(deg),    0],
+                    [0              ,math.sin(deg) , math.cos(deg),    0],
+                    [0              ,0             , 0            ,    1]]
+        if axis == 'y':
+            return [[ math.cos(deg) ,0             , math.sin(deg),    0],
+                    [ 0             ,1             , 0            ,    0],
+                    [-math.sin(deg) ,0             , math.cos(deg),    0],
+                    [0              ,0             , 0            ,    1]]
+        if axis == 'z':
+            return [[ math.cos(deg) ,-math.sin(deg), 0            ,    0],
+                    [ math.sin(deg) , math.cos(deg), 0            ,    0],
+                    [0              , 0            , 1            ,    0],
+                    [0              , 0            , 0            ,    1]]
     #==============================================================
     def test_process(self):
         global target_object
