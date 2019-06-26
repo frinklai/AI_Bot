@@ -86,9 +86,9 @@ class stockingTask:
 
         self.ori_point = Point()
         self.ori_point.x, self.ori_point.y, self.ori_point.z = 0.0,0.0,0.0
-        self.limit_min_x,self.limit_max_x = -0.3,0.3
-        self.limit_min_y,self.limit_max_y = 0.2,0.7
-        self.limit_min_z,self.limit_max_z = -0.88,-0.78
+        self.limit_min_x,self.limit_max_x = -0.4,0.07
+        self.limit_min_y,self.limit_max_y = 0.268,0.7
+        self.limit_min_z,self.limit_max_z = -0.88,-0.65
         
         #set the transformer and rotation for coordination
         self.trans_x =  -0.555
@@ -233,9 +233,9 @@ class stockingTask:
             self.state = busy
             self.arm.set_speed(self.speed)
             self.nextState = M_Target_Top
-            self.pos   = [0.48, 0.25, -0.4]
+            self.pos   = [-0.17, 0.4, -0.42]
             self.euler = [0, 0, 0]
-            self.phi = 90
+            self.phi = 0
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)  
 
         #(2nd movement) Move Tartget Top Point
@@ -249,35 +249,35 @@ class stockingTask:
             self.arm.set_speed(self.speed)
             self.state = busy
             self.nextState = FM_Tool
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, target_object["world_location"].z]
-            self.euler = [0, 0, 90]
-            self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, -0.7880]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(3rd movement) Fine Tune Tool's position
         elif self.state == FM_Tool:
             print('3rd:self.state == FM_Tool')
-            self.arm.set_speed(self.faster_speed)
+            self.arm.set_speed(self.speed)
             self.state = busy
             self.nextState = Enable_Sucker
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, target_object["world_location"].z]
-            self.euler = [0, 0, 90]
-            self.phi = 90
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y,-0.7880 ]
+            self.euler = [0, 0, 0]
+            self.phi = 0
             self.quater = target_object["pose"]
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi, quater = self.quater)
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)#, quater = self.quater)
 
         #(4th movement) Enable Sucker
         elif self.state == Enable_Sucker:
             print('4th:self.state == Enable_Sucker')
             # self.suction.gripper_vaccum_on()
-            self.arm.set_speed(self.faster_speed)
+            self.arm.set_speed(self.speed)
             self.state = busy
             self.nextState = RM_Close_Target
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, target_object["world_location"].z]
-            self.euler = [0, 0, 90]
-            self.phi = 90
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y,-0.7880]
+            self.euler = [0, 0, 0]
+            self.phi = 0
             self.quater = target_object["pose"]
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi, quater = self.quater)
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)#, quater = self.quater)
 
         #(5th movement) Relative move close to target
         elif self.state == RM_Close_Target:
@@ -286,10 +286,10 @@ class stockingTask:
             self.state = busy
             self.nextState = RM_Leave_Target
             # ask need use tool coordinate
-            self.pos   = [0.4, 0.42, -0.63]
-            self.euler = [0, 0, 90]
-            self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y,-0.7980]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(6th movement) Relative move far to target
         elif self.state == RM_Leave_Target:
@@ -298,10 +298,10 @@ class stockingTask:
             self.state = busy
             self.nextState = M_Answer
             # ask need use tool coordinate
-            self.pos   = [0.4, 0.42, -0.63]
-            self.euler = [0, 0, 90]
-            self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y,-0.7780]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(7th movement) Move Answer Place
         elif self.state == M_Answer:
@@ -309,10 +309,10 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = RM_Put_down
-            self.pos   = [0.4, 0.42, -0.63]
-            self.euler = [0, 0, 90]
-            self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.pos   = [0.23, 0.3, -0.7780] #answer 1
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(8th movement) Move Put it down
         elif self.state == RM_Put_down:
@@ -320,10 +320,10 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = Disable_Sucker
-            self.pos   = [0.4, 0.42, -0.63]
-            self.euler = [0, 0, 90]
-            self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
+            self.pos   = [0.23, 0.3, -0.7980]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(9th movement) Disable Sucker
         elif self.state == Disable_Sucker:
@@ -332,10 +332,10 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = M_Pull_up
-            self.pos   = [0.4, 0.42, -0.63]
-            self.euler = [0, 0, 90]
-            self.phi = 90
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
+            self.pos   = [0.23, 0.3, -0.7980]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)    
         
         #(10th movement) Move Pull up Tool
         elif self.state == M_Pull_up:
@@ -343,9 +343,9 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = initPose
-            self.pos   = [0.4, 0.42, -0.63]
-            self.euler = [0, 0, 90]
-            self.phi = 90
+            self.pos   = [0.23, 0.3, -0.65]
+            self.euler = [0, 0, 0]
+            self.phi = 0
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
 
     def process(self):
