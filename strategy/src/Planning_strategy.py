@@ -46,7 +46,10 @@ class Multi_subscriber():
         self.flag = False
 
     def sub_cp(self,data):
-        self.feedback=data
+        self.feedback = data
+        self.feedback.pose.position.x=data.pose.position.x/100
+        self.feedback.pose.position.y=data.pose.position.y/100
+        self.feedback.pose.position.z=data.pose.position.z/100
         self.flag = True
 
     def get_data(self):
@@ -83,17 +86,17 @@ class stockingTask:
 
         self.ori_point = Point()
         self.ori_point.x, self.ori_point.y, self.ori_point.z = 0.0,0.0,0.0
-        self.limit_min_x,self.limit_max_x = -10,10
-        self.limit_min_y,self.limit_max_y = -10,10
-        self.limit_min_z,self.limit_max_z = 80,90
+        self.limit_min_x,self.limit_max_x = -0.3,0.3
+        self.limit_min_y,self.limit_max_y = 0.2,0.7
+        self.limit_min_z,self.limit_max_z = -0.88,-0.78
         
         #set the transformer and rotation for coordination
-        self.trans_x = 1
-        self.trans_y = 1
-        self.trans_z = 1
-        self.rot_x_axis = 90
+        self.trans_x =  -0.555
+        self.trans_y =  +0.42
+        self.trans_z = 0
+        self.rot_x_axis = -70-90
         self.rot_y_axis = 0
-        self.rot_z_axis = 0
+        self.rot_z_axis = -90
         # self.target={}
 
         self.arm = ArmTask(self.name + '_arm')
@@ -134,32 +137,33 @@ class stockingTask:
         target={}
         for model in self.model_list:
             if self.sub_cb[model].get_data() is not None:
-                if self.limit_min_x < self.sub_cb[model].get_data().pose.position.x <=self.limit_max_x:
-                    if self.limit_min_y < self.sub_cb[model].get_data().pose.position.y <=self.limit_max_y:
-                        if self.limit_min_z < self.sub_cb[model].get_data().pose.position.z <=self.limit_max_z:
+                world_corr = self.transform_2_world(self.sub_cb[model].get_data().pose.position)
+                if self.limit_min_x < world_corr.x <=self.limit_max_x:
+                    if self.limit_min_y < world_corr.y <=self.limit_max_y:
+                        if self.limit_min_z < world_corr.z <=self.limit_max_z:
                             if index == 0 :
+                                index = index+1
                                 target["name"] = model
                                 target["location"] = self.sub_cb[model].get_data().pose.position
-                                target["world_location"] = self.transform_2_world(self.sub_cb[model].get_data().pose.position)
-                                print(target["world_location"])
+                                target["world_location"] = world_corr
                                 target["pose"] = self.sub_cb[model].get_data().pose.orientation
                                 target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
                             if self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position) < target["distance"]:
                                 target["name"] = model
                                 target["location"] = self.sub_cb[model].get_data().pose.position
-                                target["world_location"] = self.transform_2_world(self.sub_cb[model].get_data().pose.position)
+                                target["world_location"] = world_corr
                                 target["pose"] = self.sub_cb[model].get_data().pose.orientation
                                 target["distance"] = self.threeD_distance(self.ori_point,self.sub_cb[model].get_data().pose.position)
-            index = index+1
             self.sub_cb[model].shut_flag()
-            if target == {}:
-                return None
-            return target
+        if target == {}:
+            return None
+        return target
 
     def threeD_distance(self,A_point,B_point):
         return math.sqrt(  (pow(abs(A_point.x-B_point.x),2)) + (pow(abs(A_point.y-B_point.y),2)) + (pow(abs(A_point.z-B_point.z),2))  )
     
     def transform_2_world(self,location):
+        print("camera_coordination::"+str(location)+"\n")
         loca = np.array([[location.x],
                          [location.y],
                          [location.z],
@@ -169,14 +173,15 @@ class stockingTask:
         rota_y = self.Rotation('y',self.rot_y_axis)
         rota_z = self.Rotation('z',self.rot_z_axis)
 
-        loca = np.dot(trans,loca)
         loca = np.dot(rota_x,loca)
         loca = np.dot(rota_y,loca)
         loca = np.dot(rota_z,loca)
+        loca = np.dot(trans,loca)
 
         location.x = loca[0]
         location.y = loca[1]
         location.z = loca[2]
+        print(location)
         return location
     
     def transform(self, x, y, z):
@@ -189,7 +194,7 @@ class stockingTask:
         deg = deg * math.pi/180
         if axis == 'x':
             return [[1              ,0             , 0            ,    0],
-                    [0              ,math.cos(deg) , math.sin(deg),    0],
+                    [0              ,math.cos(deg) ,-math.sin(deg),    0],
                     [0              ,math.sin(deg) , math.cos(deg),    0],
                     [0              ,0             , 0            ,    1]]
         if axis == 'y':
