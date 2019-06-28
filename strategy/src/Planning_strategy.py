@@ -173,25 +173,30 @@ class stockingTask:
         return math.sqrt(  (pow(abs(A_point.x-B_point.x),2)) + (pow(abs(A_point.y-B_point.y),2)) + (pow(abs(A_point.z-B_point.z),2))  )
     
     def rota_2_world(self,quaternion):
-        origin, xaxis, yaxis, zaxis = (0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)
         # print(quaternion)
         quat = np.array([quaternion.x,
                          quaternion.y,
                          quaternion.z,
                          quaternion.w])
 
-        qx = tf.transformations.quaternion_about_axis(self.rot_x_axis, xaxis)
-        qy = tf.transformations.quaternion_about_axis(self.rot_y_axis+90, yaxis)
-        qz = tf.transformations.quaternion_about_axis(self.rot_z_axis, zaxis)
-        
-        
-        q = tf.transformations.quaternion_multiply(qy, qx)
-        q = tf.transformations.quaternion_multiply(q, qz)
-        Rq = tf.transformations.quaternion_matrix(q)
-        q_matix = tf.transformations.quaternion_from_matrix(Rq)
+        trans = self.transform(self.trans_x,self.trans_y,self.trans_z)
+        rota_x = self.Rotation('x',self.rot_x_axis)
+        rota_y = self.Rotation('y',self.rot_y_axis)
+        rota_z = self.Rotation('z',self.rot_z_axis)
 
-        world_quat = tf.transformations.quaternion_multiply(q_matix,quat)
-        # print(world_quat)
+        quat_matrix = rota_y
+        # quat = np.dot(rota_y,quat )
+        quat_matrix = np.dot(rota_x,quat_matrix )
+        quat_matrix = np.dot(rota_z,quat_matrix )
+        quat_matrix = np.dot(trans,quat_matrix)
+        
+        quat2world = tf.transformations.quaternion_from_matrix(quat_matrix)
+        world_quat = tf.transformations.quaternion_multiply(quat2world,quat)
+        # q_matix_eulr = tf.transformations.euler_from_quaternion(quat_matrix ,"rxyz") 
+        # print("q_matix_eulr",np.multiply(q_matix_eulr,(180/math.pi)))
+        # world_quat =quat_matrix
+        
+
         quaternion.x = world_quat[0]
         quaternion.y = world_quat[1]
         quaternion.z = world_quat[2]
@@ -268,6 +273,7 @@ class stockingTask:
         elif self.state == initPose:
             print('1st:self.state == initPose')
             self.state = busy
+            # self.state = M_Target_Top
             self.arm.set_speed(self.speed)
             self.nextState = M_Target_Top
             self.pos   = [-0.17, 0.4, -0.42-0.06]
@@ -285,6 +291,7 @@ class stockingTask:
             print("selected {} model to pick".format(target_object["name"]))
             self.arm.set_speed(self.speed)
             self.state = busy
+            # self.state = FM_Tool
             self.nextState = FM_Tool
             self.pos   = [target_object["world_location"].x, target_object["world_location"].y, self.model_1_suckHight+0.03]
             self.euler = [0, 0, 0]
@@ -298,21 +305,38 @@ class stockingTask:
             self.state = busy
             self.nextState = Enable_Sucker
             self.pos   = [target_object["world_location"].x, target_object["world_location"].y, self.model_1_suckHight+0.03 ]
-            print(target_object["pose"])
-            tmp = tf.transformations.euler_from_quaternion([np.float64(target_object["pose"].x),
-                                                            np.float64(target_object["pose"].y),
-                                                            np.float64(target_object["pose"].z),
-                                                            np.float64(target_object["pose"].w)])
-            print(tmp)
+            # print(target_object["pose"])
+            # tmp = tf.transformations.euler_from_quaternion([np.float64(target_object["pose"].x),
+            #                                                 np.float64(target_object["pose"].y),
+            #                                                 np.float64(target_object["pose"].z),
+            #                                                 np.float64(target_object["pose"].w)],'rxyz')
+            # tmp = np.multiply(tmp,(180/math.pi))
+            # print(tmp)
+
+            p_matrix = tf.transformations.projection_matrix((0,0,0),(0,0,1))
+            
+            q = [np.float64(target_object["world_pose"].x),
+                 np.float64(target_object["world_pose"].y),
+                 np.float64(target_object["world_pose"].z),
+                 np.float64(target_object["world_pose"].w)]
+            # AA = np.dot(p_matrix,q)
+            AA2world = tf.transformations.quaternion_from_matrix(p_matrix)
+            world_quat = tf.transformations.quaternion_multiply(AA2world,q)
+            tmp = tf.transformations.euler_from_quaternion(world_quat)
+            tmp = np.multiply(tmp,(180/math.pi))
+            print("tmp:",tmp)
             print(target_object["world_pose"])
             tmp2 = tf.transformations.euler_from_quaternion([np.float64(target_object["world_pose"].x),
                                                              np.float64(target_object["world_pose"].y),
                                                              np.float64(target_object["world_pose"].z),
                                                              np.float64(target_object["world_pose"].w)])
+            tmp2 = np.multiply(tmp2,(180/math.pi))
             print(tmp2)
+
             
-            self.euler = [-tmp[0],-tmp[1],-tmp[2]]
-            self.phi = 20
+            # self.euler = [-tmp[0],-tmp[1],-tmp[2]]
+            self.euler = [-tmp[2], 0, 0] 
+            self.phi = 0
             # self.quater = target_object["pose"]
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)#, quater = self.quater)
 
