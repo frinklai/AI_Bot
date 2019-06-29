@@ -207,18 +207,7 @@ class ArmTask:
         msg.pose.position.z = pos[2]
         
         quaternion = self.euler2quaternion((roll, pitch, yaw))
-        if quater is not None:
-            # print(quater)
-            tmp = tf.transformations.euler_from_quaternion([np.float64(quater.x),np.float64(quater.y),np.float64(quater.z),np.float64(quater.w)])
-            print(tmp)
-            tmp = self.euler2quaternion(tmp)
-            # print(tmp)
-            # tmp = tf.transformations.euler_from_quaternion([np.float(tmp[0]),np.float(tmp[1]),np.float(tmp[2]),np.float(tmp[3])])
-            # print(tmp)
-
-            quaternion = [np.float64(tmp[0]),np.float64(tmp[1]),np.float64(tmp[2]),np.float64(tmp[3])]
-            # quaternion = [np.float64(quater.x),np.float64(quater.y),np.float64(quater.z),np.float64(quater.w)]
-        print(quaternion)
+        
         msg.pose.orientation.x = quaternion[0]
         msg.pose.orientation.y = quaternion[1]
         msg.pose.orientation.z = quaternion[2]

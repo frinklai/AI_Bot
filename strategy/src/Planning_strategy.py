@@ -92,17 +92,24 @@ class stockingTask:
         self.limit_min_z,self.limit_max_z = -0.88,-0.65
         
         #set the transformer and rotation for coordination
-        self.trans_x =  -0.555
-        self.trans_y =  +0.42
+        self.trans_x =  -0.5750 
+        self.trans_y =  +0.42 -0.02
         self.trans_z = 0
-        self.rot_x_axis = -70-90
-        self.rot_y_axis = -1
-        self.rot_z_axis = -90
+        self.rot_x_axis = -70-90+1
+        self.rot_y_axis = 0
+        self.rot_z_axis = -90 +3
         # self.target={}
 
-        self.model_1_suckHight = -0.8860
-        self.model_1_placepoint = [0.23, 0.3, -0.870]
-
+        #model 1
+        self.model_1_suckpoint   = [ 0.000   , 0.000    ,-0.8860]     
+        self.model_1_placepoint  = [ 0.170   , 0.320    ,-0.8700]
+        #model 2
+        self.model_2_suckpoint   = [ 0.000   , 0.000    ,-0.8760]     
+        self.model_2_placepoint  = [ 0.230   , 0.410    ,-0.8700]
+        #model 3
+        self.model_3_suckpoint   = [ 0.000   , 0.000    ,-0.8860]     
+        self.model_3_placepoint  = [ 0.285   , 0.510    ,-0.8700]
+  
         self.arm = ArmTask(self.name + '_arm')
         if self.name == 'left':
             self.is_right = -1
@@ -293,7 +300,7 @@ class stockingTask:
             self.state = busy
             # self.state = FM_Tool
             self.nextState = FM_Tool
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, self.model_1_suckHight+0.03]
+            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, self.model_1_suckpoint[2]+0.03]
             self.euler = [0, 0, 0]
             self.phi = 0
             self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
@@ -304,54 +311,47 @@ class stockingTask:
             self.arm.set_speed(self.speed)
             self.state = busy
             self.nextState = Enable_Sucker
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, self.model_1_suckHight+0.03 ]
-            # print(target_object["pose"])
-            # tmp = tf.transformations.euler_from_quaternion([np.float64(target_object["pose"].x),
-            #                                                 np.float64(target_object["pose"].y),
-            #                                                 np.float64(target_object["pose"].z),
-            #                                                 np.float64(target_object["pose"].w)],'rxyz')
-            # tmp = np.multiply(tmp,(180/math.pi))
-            # print(tmp)
 
             p_matrix = tf.transformations.projection_matrix((0,0,0),(0,0,1))
+            p_quat = tf.transformations.quaternion_from_matrix(p_matrix)
             
             q = [np.float64(target_object["world_pose"].x),
                  np.float64(target_object["world_pose"].y),
                  np.float64(target_object["world_pose"].z),
                  np.float64(target_object["world_pose"].w)]
-            # AA = np.dot(p_matrix,q)
-            AA2world = tf.transformations.quaternion_from_matrix(p_matrix)
-            world_quat = tf.transformations.quaternion_multiply(AA2world,q)
-            tmp = tf.transformations.euler_from_quaternion(world_quat)
-            tmp = np.multiply(tmp,(180/math.pi))
-            print("tmp:",tmp)
-            print(target_object["world_pose"])
-            tmp2 = tf.transformations.euler_from_quaternion([np.float64(target_object["world_pose"].x),
-                                                             np.float64(target_object["world_pose"].y),
-                                                             np.float64(target_object["world_pose"].z),
-                                                             np.float64(target_object["world_pose"].w)])
-            tmp2 = np.multiply(tmp2,(180/math.pi))
-            print(tmp2)
+            world_quat = tf.transformations.quaternion_multiply(p_quat,q)
+            p_euler = tf.transformations.euler_from_quaternion(world_quat)
+            p_euler = np.multiply(p_euler,(180/math.pi))
+            print("p_euler:",p_euler)
 
-            
-            # self.euler = [-tmp[0],-tmp[1],-tmp[2]]
-            self.euler = [-tmp[2], 0, 0] 
-            self.phi = 0
-            # self.quater = target_object["pose"]
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)#, quater = self.quater)
+            if target_object["name"] == "1_A" or target_object["name"] == "1_B":
+                self.pos   = [target_object["world_location"].x + self.model_1_suckpoint[0], 
+                              target_object["world_location"].y + self.model_1_suckpoint[1], 
+                             self.model_1_suckpoint[2]+0.03 ]
+                self.euler = [-p_euler[2], 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "2_A" or target_object["name"] == "2_B":
+                self.pos   = [target_object["world_location"].x + self.model_2_suckpoint[0], 
+                              target_object["world_location"].y + self.model_2_suckpoint[1], 
+                             self.model_2_suckpoint[2]+0.03 ]
+                self.euler = [-p_euler[2], 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "3_A" or target_object["name"] == "3_B":
+                self.pos   = [target_object["world_location"].x + self.model_3_suckpoint[0], 
+                              target_object["world_location"].y + self.model_3_suckpoint[1], 
+                             self.model_3_suckpoint[2]+0.03 ]
+                self.euler = [-p_euler[2], 0, 0] 
+                self.phi = 0
+
+            self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
+
 
         #(4th movement) Enable Sucker
         elif self.state == Enable_Sucker:
             print('4th:self.state == Enable_Sucker')
             self.suction.gripper_vaccum_on()
-            # self.arm.set_speed(self.speed)
             self.state = RM_Close_Target
-            # self.nextState = RM_Close_Target
-            # self.pos   = [target_object["world_location"].x, target_object["world_location"].y,-0.7880]
-            # self.euler = [0, 0, 0]
-            # self.phi = 20
-            # self.quater = target_object["pose"]
-            # self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi, quater = self.quater)
+            
 
         #(5th movement) Relative move close to target
         elif self.state == RM_Close_Target:
@@ -360,9 +360,26 @@ class stockingTask:
             self.state = busy
             self.nextState = RM_Leave_Target
             # ask need use tool coordinate
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y,self.model_1_suckHight]
-            # self.euler = [0, 0, 0]
-            # self.phi = 0
+
+            if target_object["name"] == "1_A" or target_object["name"] == "1_B":
+                self.pos   = [target_object["world_location"].x + self.model_1_suckpoint[0], 
+                              target_object["world_location"].y + self.model_1_suckpoint[1], 
+                             self.model_1_suckpoint[2] ]
+                # self.euler = [-p_euler[2], 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "2_A" or target_object["name"] == "2_B":
+                self.pos   = [target_object["world_location"].x + self.model_2_suckpoint[0], 
+                              target_object["world_location"].y + self.model_2_suckpoint[1], 
+                             self.model_2_suckpoint[2] ]
+                # self.euler = [-p_euler[2], 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "3_A" or target_object["name"] == "3_B":
+                self.pos   = [target_object["world_location"].x + self.model_3_suckpoint[0], 
+                              target_object["world_location"].y + self.model_3_suckpoint[1], 
+                             self.model_3_suckpoint[2] ]
+                # self.euler = [-p_euler[2], 0, 0] 
+                self.phi = 0
+
             self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(6th movement) Relative move far to target
@@ -372,9 +389,28 @@ class stockingTask:
             self.state = busy
             self.nextState = M_Answer
             # ask need use tool coordinate
-            self.pos   = [target_object["world_location"].x, target_object["world_location"].y, self.model_1_suckHight+0.2]
-            # self.euler = [0, 0, 0]
-            # self.phi = 0
+            
+            if target_object["name"] == "1_A" or target_object["name"] == "1_B":
+                self.pos   = [target_object["world_location"].x + self.model_1_suckpoint[0], 
+                              target_object["world_location"].y + self.model_1_suckpoint[1] - 0.1, 
+                             self.model_1_suckpoint[2]+0.08 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "2_A" or target_object["name"] == "2_B":
+                self.pos   = [target_object["world_location"].x + self.model_2_suckpoint[0], 
+                              target_object["world_location"].y + self.model_2_suckpoint[1] - 0.1, 
+                             self.model_2_suckpoint[2]+0.08 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "3_A" or target_object["name"] == "3_B":
+                self.pos   = [target_object["world_location"].x + self.model_3_suckpoint[0], 
+                              target_object["world_location"].y + self.model_3_suckpoint[1] - 0.1, 
+                             self.model_3_suckpoint[2]+0.08 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+
+            self.pos[1] = max(0.35,self.pos[1])
+            print(self.pos)
             self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(7th movement) Move Answer Place
@@ -383,11 +419,26 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = RM_Put_down
-            self.pos   = [self.model_1_placepoint[0] + 0,
-                          self.model_1_placepoint[1] + 0,
-                          self.model_1_placepoint[2] + 0.1] #answer 1
-            self.euler = [0, 0, 0]
-            self.phi = 0
+
+            if target_object["name"] == "1_A" or target_object["name"] == "1_B":
+                self.pos   = [self.model_1_placepoint[0], 
+                              self.model_1_placepoint[1], 
+                              self.model_1_placepoint[2]+0.03 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "2_A" or target_object["name"] == "2_B":
+                self.pos   = [self.model_2_placepoint[0], 
+                              self.model_2_placepoint[1], 
+                              self.model_2_placepoint[2]+0.03 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "3_A" or target_object["name"] == "3_B":
+                self.pos   = [self.model_3_placepoint[0], 
+                              self.model_3_placepoint[1], 
+                              self.model_3_placepoint[2]+0.03 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+
             self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(8th movement) Move Put it down
@@ -396,34 +447,60 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = Disable_Sucker
-            self.pos   = self.model_1_placepoint
-            self.euler = [0, 0, 0]
-            self.phi = 0
+            
+            if target_object["name"] == "1_A" or target_object["name"] == "1_B":
+                self.pos   = [self.model_1_placepoint[0], 
+                              self.model_1_placepoint[1], 
+                              self.model_1_placepoint[2] ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "2_A" or target_object["name"] == "2_B":
+                self.pos   = [self.model_2_placepoint[0], 
+                              self.model_2_placepoint[1], 
+                              self.model_2_placepoint[2] ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "3_A" or target_object["name"] == "3_B":
+                self.pos   = [self.model_3_placepoint[0], 
+                              self.model_3_placepoint[1], 
+                              self.model_3_placepoint[2] ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+
             self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
 
         #(9th movement) Disable Sucker
         elif self.state == Disable_Sucker:
             print('9th:self.state == Disable_Sucker')
             self.suction.gripper_vaccum_off()
-            # self.arm.set_speed(self.faster_speed)
             self.state = M_Pull_up
-            # self.nextState = M_Pull_up
-            # self.pos   = [0.23, 0.3, -0.7980]
-            # self.euler = [0, 0, 0]
-            # self.phi = 0
-            # self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)    
-        
+            
         #(10th movement) Move Pull up Tool
         elif self.state == M_Pull_up:
             print('10th:self.state == M_Pull_up')
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = initPose
-            self.pos   = [self.model_1_placepoint[0] + 0,
-                          self.model_1_placepoint[1] + 0,
-                          self.model_1_placepoint[2] + 0.05] #answer 1
-            self.euler = [0, 0, 0]
-            self.phi = 0
+            
+            if target_object["name"] == "1_A" or target_object["name"] == "1_B":
+                self.pos   = [self.model_1_placepoint[0], 
+                              self.model_1_placepoint[1], 
+                              self.model_1_placepoint[2] + 0.03 ]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "2_A" or target_object["name"] == "2_B":
+                self.pos   = [self.model_2_placepoint[0], 
+                              self.model_2_placepoint[1], 
+                              self.model_2_placepoint[2] + 0.03]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+            elif target_object["name"] == "3_A" or target_object["name"] == "3_B":
+                self.pos   = [self.model_3_placepoint[0], 
+                              self.model_3_placepoint[1], 
+                              self.model_3_placepoint[2] + 0.03]
+                self.euler = [0, 0, 0] 
+                self.phi = 0
+
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
 
     def process(self):
