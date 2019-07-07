@@ -105,10 +105,10 @@ class stockingTask:
         self.model_1_placepoint  = [ 0.170   , 0.320    ,-0.8700]
         #model 2
         self.model_2_suckpoint   = [ 0.000   , 0.000    ,-0.8760]     
-        self.model_2_placepoint  = [ 0.230   , 0.410    ,-0.8700]
+        self.model_2_placepoint  = [ 0.170 -0.01  , 0.450 -0.025   ,-0.8700]
         #model 3
-        self.model_3_suckpoint   = [ 0.000   , 0.000    ,-0.8860]     
-        self.model_3_placepoint  = [ 0.285   , 0.510    ,-0.8700]
+        self.model_3_suckpoint   = [ 0.000-0.005   , 0.000    ,-0.8850]     
+        self.model_3_placepoint  = [ 0.205-0.025   , 0.510+0.02    ,-0.8700]
   
         self.arm = ArmTask(self.name + '_arm')
         if self.name == 'left':
@@ -281,6 +281,7 @@ class stockingTask:
             print('1st:self.state == initPose')
             self.state = busy
             # self.state = M_Target_Top
+            __ = self.choose_target()
             self.arm.set_speed(self.speed)
             self.nextState = M_Target_Top
             self.pos   = [-0.17, 0.4, -0.42-0.06]
@@ -340,7 +341,7 @@ class stockingTask:
                 self.pos   = [target_object["world_location"].x + self.model_3_suckpoint[0], 
                               target_object["world_location"].y + self.model_3_suckpoint[1], 
                              self.model_3_suckpoint[2]+0.03 ]
-                self.euler = [-p_euler[2], 0, 0] 
+                self.euler = [-p_euler[2], -8, 0] 
                 self.phi = 0
 
             self.arm.ikMove(mode= 'line', pos = self.pos, euler = self.euler, phi = self.phi)
@@ -500,7 +501,7 @@ class stockingTask:
                               self.model_3_placepoint[2] + 0.03]
                 self.euler = [0, 0, 0] 
                 self.phi = 0
-
+                
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)    
 
     def process(self):
