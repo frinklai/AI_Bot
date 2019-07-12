@@ -53,6 +53,13 @@ private:
   Eigen::MatrixXd R07;
   Eigen::MatrixXd R47;
 
+  /*****************new_fuction****************/
+  Eigen::MatrixXd INV_DHTABLE;
+  Eigen::MatrixXd R57;
+  Eigen::MatrixXd R72;
+  Eigen::MatrixXd R05_notheta3;
+  /********************end*********************/
+
 public:
   ManipulatorKinematicsDynamics();
   ManipulatorKinematicsDynamics(TreeSelect tree);
@@ -87,12 +94,19 @@ public:
   static Eigen::MatrixXd rotation2rpy( Eigen::MatrixXd rotation );
   void load_LinkParam();
   void getPhiAngle();
-  double est_joint_limit_degree(double max_limit, double min_limit, double curr_angle);
-  double est_wrist_singularity_degree(double Joint2, double Joint6);
-
+//  double est_joint_limit_degree(double max_limit, double min_limit, double curr_angle);
+//  double est_wrist_singularity_degree(double Joint2, double Joint6);
+  /*****************new_fuction****************/
+  bool InverseKinematics_p2p( Eigen::VectorXd position, Eigen::Matrix3d rotation, double phi, 
+                            double slide_position, Eigen::VectorXd Old_JointAngle, bool is_p2p);
+  bool limit_check(Eigen::Vector3d goal_position, Eigen::Matrix3d rotation);
+  inline double get_d4(){return d4;};
+  /********************end*********************/
   // for estimate joint limit
-  Eigen::VectorXd JointAngle_for_est_lmt;
-  bool is_est_joint_limit;  // if true, the result of kinematics will not be send to motor.
+  
+
+//  Eigen::VectorXd JointAngle_for_est_lmt;
+//  bool is_est_joint_limit;  // if true, the result of kinematics will not be send to motor.
 
 };
 
