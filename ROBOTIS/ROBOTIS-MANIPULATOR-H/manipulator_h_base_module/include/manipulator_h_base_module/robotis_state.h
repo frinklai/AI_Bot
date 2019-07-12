@@ -65,8 +65,16 @@ public:
   double ik_start_phi_, ik_target_phi_;   //new
   int ik_id_start_, ik_id_end_;   
   double slide_pos_;
-
+/*
   void setInverseKinematics(int cnt, Eigen::MatrixXd start_rotation, double start_phi);
+*/
+/*********************************new_fuction****************************/
+  bool    is_inv;
+  ManipulatorKinematicsDynamics  *IK_test;
+  Eigen::Quaterniond ik_target_quaternion, inv_target_quaternion;
+  bool setInverseKinematics(int cnt, int all_steps, Eigen::MatrixXd start_rotation, double start_phi, Eigen::VectorXd Old_JointAngle);
+  Eigen::Quaterniond slerp(double t, Eigen::Quaterniond& self, Eigen::Quaterniond& other, bool inv);
+/************************************end*********************************/  
 };
 
 }
