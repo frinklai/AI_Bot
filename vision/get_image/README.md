@@ -1,4 +1,4 @@
-usage: 
+# usage: 
 	1.Find FLIR camera id:
 		(1) open another terminal
 		(2) $ rosrun pointgrey_camera_driver list_cameras 
