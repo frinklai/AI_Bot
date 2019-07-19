@@ -4,8 +4,8 @@ import speech_recognition as sr
 import os
 import re
 # ros
-# import rospy
-# from speech_recognition.msg import SR
+import rospy
+from speech.msg import SR
 
 count = 0
 dis = 0
