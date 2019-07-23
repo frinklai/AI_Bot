@@ -1,0 +1,10 @@
+red_square
+cloth
+bottle
+tap
+screw
+nut
+penholder
+pearl
+glass
+square
