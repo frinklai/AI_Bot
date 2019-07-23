@@ -1,9 +1,0 @@
-<launch>
-
-   <node pkg="yolo_v3" type="yolo.py" name="yolo" output="screen">       
-   </node>
-
-   <node pkg="yolo_v3" type="stra.py" name="stra" output="screen">       
-   </node>
-
-</launch>
