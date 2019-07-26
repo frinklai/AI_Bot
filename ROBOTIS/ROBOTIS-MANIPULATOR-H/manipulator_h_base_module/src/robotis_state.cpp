@@ -84,13 +84,16 @@ bool RobotisState::setInverseKinematics(int cnt, int all_steps, Eigen::MatrixXd 
     int c;
     bool ik_s = false;
     bool limit_success;
+    //++
+    IK_test->do_wirst_avoid = false;
+    
     Eigen::Vector3d test_position;
     Eigen::MatrixXd test_rotation;
     float test_phi;
     float test_slide_pos;
     for (int id = 0; id <= MAX_JOINT_ID; id++)
       IK_test->manipulator_link_data_[id]->joint_angle_ = Old_JointAngle(id);
-        
+       
     for(float i=0; i<=12; i++)
     {
       c = int(((double)all_steps-1) * i/12);
