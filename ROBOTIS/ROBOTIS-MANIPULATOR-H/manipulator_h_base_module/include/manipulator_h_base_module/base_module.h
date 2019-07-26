@@ -129,6 +129,9 @@ public:
   void generateTaskTrajProcess();
   void generateSlideTrajProcess();    //new
 
+  //++new
+  bool CompareNextPos();
+  bool wirst_avoid;
 
   /* ROS Framework Functions */
   void initialize(const int control_cycle_msec, robotis_framework::Robot *robot);
