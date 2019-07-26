@@ -30,6 +30,9 @@ using namespace robotis_manipulator_h;
 BaseModule::BaseModule()
   : control_cycle_msec_(0)
 {
+//++
+  wirst_avoid   = false;
+
   stop_flag     = false;
   wait_flag     = false;
   enable_       = false;
@@ -213,6 +216,27 @@ void BaseModule::setModeMsgCallback(const std_msgs::String::ConstPtr& msg)
   }
   return;
 }
+//++new
+
+bool BaseModule::CompareNextPos()
+{
+  double X7, Y7, Z7, X5, Y5, Z5;
+  X7 = ((int)(manipulator_->manipulator_link_data_[7]->position_.coeff(0, 0)*1000))/1000.0;
+  Y7 = ((int)(manipulator_->manipulator_link_data_[7]->position_.coeff(1, 0)*1000))/1000.0;
+  Z7 = ((int)(manipulator_->manipulator_link_data_[7]->position_.coeff(2, 0)*1000))/1000.0;
+  X5 = ((int)(manipulator_->manipulator_link_data_[5]->position_.coeff(0, 0)*1000))/1000.0;
+  Y5 = ((int)(manipulator_->manipulator_link_data_[5]->position_.coeff(1, 0)*1000))/1000.0;
+  Z5 = ((int)(manipulator_->manipulator_link_data_[5]->position_.coeff(2, 0)*1000))/1000.0;
+  if(Z7 == Z5 || (X7 == X5) && (Y7 == Y5))
+  {
+    return true;
+  }else
+  {
+    return false;
+  }
+  
+
+}
 
 bool BaseModule::getJointPoseCallback(manipulator_h_base_module_msgs::GetJointPose::Request &req,
                                       manipulator_h_base_module_msgs::GetJointPose::Response &res)
@@ -242,7 +266,6 @@ bool BaseModule::getJointPoseCallback(manipulator_h_base_module_msgs::GetJointPo
 bool BaseModule::getKinematicsPoseCallback(manipulator_h_base_module_msgs::GetKinematicsPose::Request &req,
                                            manipulator_h_base_module_msgs::GetKinematicsPose::Response &res)
 {
-
   if (enable_ == false)
     return false;
 
@@ -251,6 +274,7 @@ bool BaseModule::getKinematicsPoseCallback(manipulator_h_base_module_msgs::GetKi
   res.group_pose.position.z = manipulator_->manipulator_link_data_[END_LINK]->position_.coeff(2, 0);
   res.phi =  manipulator_->manipulator_link_data_[END_LINK]->phi_;
   res.orientation.resize(16);
+
   for(int i=0; i<=3; i++)
   {
     for(int j=0; j<=3; j++)
@@ -272,7 +296,6 @@ bool BaseModule::getKinematicsPoseCallback(manipulator_h_base_module_msgs::GetKi
     res.euler.push_back(manipulator_->manipulator_link_data_[END_LINK]->euler(i));
 
   // std::cout<<"euler = "<<manipulator_->manipulator_link_data_[END_LINK]->euler *180/M_PI<<std::endl;
-
   return true;
 }
 
@@ -286,7 +309,7 @@ void BaseModule::kinematicsPoseMsgCallback(const manipulator_h_base_module_msgs:
 
   robotis_->ik_id_start_ = 0;
   robotis_->ik_id_end_   = END_LINK;
- 
+  
   if (robotis_->is_moving_ == false)
   {
     tra_gene_thread_ = new boost::thread(boost::bind(&BaseModule::generateTaskTrajProcess, this));
@@ -303,10 +326,9 @@ void BaseModule::kinematicsPoseMsgCallback(const manipulator_h_base_module_msgs:
 // =======================================================================================================================
 void BaseModule::p2pPoseMsgCallback(const manipulator_h_base_module_msgs::P2PPose::ConstPtr& msg)
 {
-  // std::cout<<"asdfasdfasdf"<<std::endl;
   if (enable_ == false)
     return;
-
+  
   robotis_->p2p_pose_msg_ = *msg;
 
   robotis_->ik_id_start_ = 0;
@@ -314,6 +336,7 @@ void BaseModule::p2pPoseMsgCallback(const manipulator_h_base_module_msgs::P2PPos
 
   Eigen::Vector3d p2p_positoin;
   Eigen::Matrix3d p2p_rotation;
+
 
   int     max_iter    = 30;
   double  ik_tol      = 1e-3;
@@ -587,10 +610,9 @@ void BaseModule::generateTaskTrajProcess()
     robotis_->cnt_ = 0;
     robotis_->is_moving_ = true;
     robotis_->ik_solve_ = true;
-    std::cout << "4444444444444444444444444" << std::endl;
     ROS_INFO("[start] send trajectory");
     publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "Start Trajectory");
-    std::cout << "3333333333333333333333333" << std::endl;
+
   }
   else
   {
@@ -649,6 +671,8 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
   if (robotis_->is_moving_ == true && robotis_->cnt_ < robotis_->all_time_steps_)
   {
     Eigen::VectorXd Old_JointAngle(8);
+    wirst_avoid = CompareNextPos();
+    manipulator_->get_WirstAvoid(wirst_avoid);
     if (robotis_->cnt_ == 0)
     {
       robotis_->ik_start_rotation_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->orientation_;
@@ -670,7 +694,6 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
 
       bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
                                                               robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false);
-    
       if (ik_success && setIk_success)
       {
         
@@ -680,6 +703,7 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
         slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
         if(manipulator_->manipulator_link_data_[0]->singularity_ && robotis_->cnt_ > 1)
         {
+          
           std::cout<<"====robotis_->cnt_====="<<robotis_->cnt_<<" ";
           robotis_->cnt_--;
           // robotis_->cnt_ = (robotis_->cnt_ > 1) ? (robotis_->cnt_-1) : robotis_->cnt_;
