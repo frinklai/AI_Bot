@@ -39,7 +39,6 @@ ManipulatorKinematicsDynamics::ManipulatorKinematicsDynamics(TreeSelect tree)
   // for setimate joint limit
 //  is_est_joint_limit = false;
 //  JointAngle_for_est_lmt = Eigen::MatrixXd::Zero(7, 1);
-
   // load data
   for (int id = 0; id <= ALL_JOINT_ID; id++)
     manipulator_link_data_[id] = new LinkData();
@@ -413,6 +412,12 @@ Eigen::MatrixXd ManipulatorKinematicsDynamics::calcVWerr(Eigen::MatrixXd tar_pos
 
   return err;
 }
+//++
+void ManipulatorKinematicsDynamics::get_WirstAvoid(bool is_wirst)
+{
+  do_wirst_avoid = is_wirst;
+}
+
 
 //self p2p
 bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd tar_position,
@@ -421,12 +426,11 @@ bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd ta
 
   bool ik_success     = false;
   bool limit_success  = false;
-  
+
   forwardKinematics(7);
   std::vector<int> idx = findRoute(to);
   Eigen::VectorXd Old_JointAngle(8);
   Eigen::VectorXd angle;
-  
 /*****************************************new_fuction****************************************/ 
   for (int id = 0; id < idx.size(); id++)
     Old_JointAngle[idx[id]] = manipulator_link_data_[idx[id]]->joint_angle_;
@@ -1324,11 +1328,47 @@ bool ManipulatorKinematicsDynamics::InverseKinematics_p2p( Eigen::VectorXd goal_
   theta_3 = atan( (RL_prm *R03(1,2)) / (RL_prm *R03(1,0)));
 
   R47 = R04.inverse() * R07;
+//-------------------------- wrist singularity avoidance --------------------------
+  double Up_J5   = atan(-R47(1,2) / -R47(0,2));
+  double Up_J6   = acos(R47(2,2));
+  double Up_J7   = atan(-R47(2,1) / R47(2,0));
 
-  theta_5 = atan(-R47(1,2) / -R47(0,2));
-  theta_6 = acos(R47(2,2));
-  theta_7 = atan(-R47(2,1) / R47(2,0));
+  double Down_J5 = atan(R47(1,2) / R47(0,2));
+  double Down_J6 = acos(-R47(2,2));
+  double Down_J7 = atan(R47(2,1) / -R47(2,0));
+
+  // without Normalize Angle
+  double Diff_Up_J5   = fabs( ( Up_J5 - Old_JointAngle(5) ) );
+  double Diff_Up_J6   = fabs( ( Up_J6 - Old_JointAngle(6) ) );
+  double Diff_Up_J7   = fabs( ( Up_J7 - Old_JointAngle(7) ) );
+
+  double Diff_Down_J5 = fabs( ( Down_J5 - Old_JointAngle(5) ) );
+  double Diff_Down_J6 = fabs( ( Down_J6 - Old_JointAngle(6) ) );
+  double Diff_Down_J7 = fabs( ( Down_J7 - Old_JointAngle(7) ) );
+//-----------------------------------------------------------------------------------
   
+  if(do_wirst_avoid == true)
+  {
+    if( Diff_Up_J5 + Diff_Up_J6 + Diff_Up_J7 <= Diff_Down_J5 + Diff_Down_J6 + Diff_Down_J7 )
+    {
+      theta_5 = Up_J5;
+      theta_6 = Up_J6; 
+      theta_7 = Up_J7;
+    }
+    else
+    {
+      theta_5 = Down_J5;
+      theta_6 = Down_J6;
+      theta_7 = Down_J7;  
+    }
+  }
+  else
+  {
+    theta_5 = atan(-R47(1,2) / -R47(0,2));
+    theta_6 = acos(R47(2,2));
+    theta_7 = atan(-R47(2,1) / R47(2,0));
+  }
+
   for ( int i = 1; i>= -1; i-=2 )
   { 
     bool theta_1_flag = false;
