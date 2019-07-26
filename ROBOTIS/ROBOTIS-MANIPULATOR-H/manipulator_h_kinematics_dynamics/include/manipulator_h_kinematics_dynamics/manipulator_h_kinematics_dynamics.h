@@ -25,6 +25,8 @@
 #include "manipulator_h_kinematics_dynamics_define.h"
 #include "../../../ROBOTIS-Math/robotis_math/include/robotis_math/robotis_math_base.h"
 
+//++
+//#include "../../../ROBOTIS-MANIPULATOR-H/manipulator_h_base_module/include/manipulator_h_base_module/base_module.h"
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
 #define pi M_PI
@@ -59,13 +61,15 @@ private:
   Eigen::MatrixXd R72;
   Eigen::MatrixXd R05_notheta3;
   /********************end*********************/
-
+  
 public:
   ManipulatorKinematicsDynamics();
   ManipulatorKinematicsDynamics(TreeSelect tree);
   ~ManipulatorKinematicsDynamics();
 
   LinkData *manipulator_link_data_[ ALL_JOINT_ID + 1];
+  //+
+  //BaseModule *basemodule;
 
   std::vector<int> findRoute(int to);
   std::vector<int> findRoute(int from, int to);
@@ -102,6 +106,10 @@ public:
   bool limit_check(Eigen::Vector3d goal_position, Eigen::Matrix3d rotation);
   inline double get_d4(){return d4;};
   /********************end*********************/
+//++
+  bool do_wirst_avoid;
+  void get_WirstAvoid(bool is_wirst);
+
   // for estimate joint limit
   
 
