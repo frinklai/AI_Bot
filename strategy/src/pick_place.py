@@ -132,7 +132,7 @@ class stockingTask:
             self.pos   = [0.4, 0.5, -0.3]
             self.euler = [0, 0, 0]
             self.phi = 0
-            self.nextState = move_to_obj
+            self.nextState = wait_img_pos
             # self.pos   = [0.48, 0.25, -0.4]
             # self.euler = [0, 0, 0]
             # self.phi = 90
@@ -159,43 +159,34 @@ class stockingTask:
         #     gripper.Send_Gripper_Command('3D_mode')
 
 
-        # elif self.state == wait_img_pos:        # wait_img_pos
-        #     print('self.state == wait_img_pos')
-        #     self.state = wait_img_pos
-        #     # print('len(self.img_data_list = ', len(self.img_data_list))
-        #     #print('aaaaa')
-        #     #rospy.Subscriber('/object/ROI_array', ROI_array, self.get_obj_info_cb)
+        elif self.state == wait_img_pos:        # wait_img_pos
+            print('self.state == wait_img_pos')
+            self.state = wait_img_pos #busy?
 
-        #     #if(len(self.img_data_list)!=0):
-        #     #print("str(self.img_data.object_name): ", str(self.img_data.object_name))
-
-        #     if(len(self.img_data_list)!=0):
-        #         #print('bbbb')
-        #         self.No_Object_count = 0
-        #         for i in range(len(self.img_data_list)):
-        #             # if(i!=0):
-        #             #     print("\n")
-        #             if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):        
-        #                 print("----- stra detect object_" + str(i) + " ----- ")
-        #                 print("object_name = " + str(self.img_data.object_name))
-        #                 print("score = " + str(self.img_data.score))
-        #                 print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
-        #                 print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
-        #                 self.nextState = goto
-        #                 self.obj_name = self.img_data.object_name
-        #                 x = (self.img_data.min_x + self.img_data.Max_x)/2
-        #                 y = (self.img_data.min_y + self.img_data.Max_y)/2    
-        #                 time.sleep(1)
-        #             else:
-        #                 print('object over range!!')
-        #     else:
-        #         print('no object!!!')
-        #         self.nextState = wait_img_pos
-        #         self.No_Object_count += 1
-        #     self.state = self.nextState  
-        #     if self.No_Object_count == 500:      #判斷桌上是否沒有物件
-        #         self.state = move_standby
-        #         self.close_box = True                          
+            if(len(self.img_data_list)!=0):
+                self.No_Object_count = 0
+                for i in range(len(self.img_data_list)):
+                    if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):        
+                        print("----- stra detect object_" + str(i) + " ----- ")
+                        print("object_name = " + str(self.img_data.object_name))
+                        print("score = " + str(self.img_data.score))
+                        print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
+                        print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
+                        self.nextState = move_to_obj
+                        self.obj_name = self.img_data.object_name
+                        x = (self.img_data.min_x + self.img_data.Max_x)/2
+                        y = (self.img_data.min_y + self.img_data.Max_y)/2    
+                        time.sleep(1)
+                    else:
+                        print('object over range!!')
+            else:
+                print('no object!!!')
+                self.nextState = wait_img_pos
+                self.No_Object_count += 1
+            self.state = self.nextState
+            if self.No_Object_count == 500:      #判斷桌上是否沒有物件
+                self.state = move_to_obj
+                # self.close_box = True                          
 
         # # 防止影像狀態機怪怪的空狀態(必定接在wait_img_pos後面)
         # elif self.state == goto:              
