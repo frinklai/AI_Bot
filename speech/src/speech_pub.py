@@ -55,12 +55,13 @@ if __name__ == '__main__':
                         print('抓滑鼠')
                         check.speech_check = 3
                         break
+                if check.speech_check == 0:
+                    print('沒有這樣東西')
             else:
                 print('請說要"抓"什麼')
-            if check.speech_check == 0 and catch != -1:
-                print('沒有這樣東西')
-            print("check = " + str(check.speech_check))
-            speech_recognition_pub.publish(check)
-            time.sleep(1)
+            print('check = ' + str(check.speech_check))
+            if check.speech_check != 0:
+                for i in range(300000):
+                    speech_recognition_pub.publish(check)
     except rospy.ROSInterruptException:
         pass
