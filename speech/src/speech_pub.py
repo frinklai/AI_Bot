@@ -5,7 +5,7 @@ import os
 import re
 # ros
 import rospy
-# from speech.msg import SR
+from speech.msg import SR
 name = " "
 
 def SpeechRecog():
