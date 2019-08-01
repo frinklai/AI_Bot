@@ -26,7 +26,6 @@ def SpeechRecog():
         global name
         name = r.recognize_google(audio,language = 'zh-TW')
         print(name)
-        #name = "x前進5公分 y後退4公分 z上升3公分"
     except sr.UnknownValueError:
         print("Google Speech Recognition could not understand audio")
     except sr.RequestError as e:
@@ -34,20 +33,20 @@ def SpeechRecog():
 
 if __name__ == '__main__':
     try:
-        SpeechRecog()
-        name = "去抓寶特瓶"
+        # SpeechRecog()
+        name = "去抓保特瓶"
         catch = name.find(u'抓')
         if catch != -1:
             cnt = catch + 1
             for i in range(len(name) - catch - 1):
                 if name[cnt+i] == '瓶':
-                    print('去抓瓶子')
+                    print('抓瓶子')
                     check = 1
                 elif name[cnt+i] == '手' and name[cnt+i+1] == '機':
-                    print('去抓手機')
+                    print('抓手機')
                     check = 2
                 elif name[cnt+i] == '滑' and name[cnt+i+1] == '鼠':
-                    print('去抓滑鼠')
+                    print('抓滑鼠')
                     check = 3
         else:
             print('請說要"抓"什麼')
