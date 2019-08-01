@@ -15,6 +15,7 @@ from arm_control  import ArmTask, SuctionTask
 from yolo_v3.msg  import ROI_array  
 from yolo_v3.msg  import ROI  
 from comm_stm32   import Gripper
+from speech       import SR
 
 count   = 0
 box_cnt = 1
@@ -59,7 +60,7 @@ close_box_finish = 33           #離開箱子
 box_loosen       = 34
 back_safe_pose   = 35           
 mode_2D_catch    = 36
-
+wait_speech_recognition = 37
 
 x = 0
 y = 0
@@ -75,6 +76,8 @@ class stockingTask:
                 self.en_sim = rospy.get_param('self.en_sim')
         self.img_data = ROI()
         self.img_data_list = []
+        self.check = SR()
+        self.speech_obj_name = ' '
         self.name = _name
         self.state = initPose
         self.nowState = initPose 
@@ -96,14 +99,15 @@ class stockingTask:
             self.is_right = -1
             self.speed = SPEED_L
             self.faster_speed = 40
-        # self.init_pub_sub()
+        self.init_pub_sub()
         if self.en_sim:
             self.suction = SuctionTask(self.name + '_gazebo')
         else:
             self.suction = SuctionTask(self.name)
     
-    # def init_pub_sub(self):
-    #     rospy.Subscriber('/object/ROI_array', ROI_array, self.get_obj_info_cb)
+    def init_pub_sub(self):
+        rospy.Subscriber('/speech/check',     SR       , self.get_speech_info)
+        rospy.Subscriber('/object/ROI_array', ROI_array, self.get_obj_info_cb)
 
     def process(self):
         if self.arm.is_stop:
@@ -127,15 +131,11 @@ class stockingTask:
         elif self.state == initPose:
             print('self.state == initPose')
             self.state = busy
-            #self.nextState = wait_img_pos
             self.arm.set_speed(self.speed)
             self.pos   = [0.4, 0.5, -0.3]
             self.euler = [0, 0, 0]
             self.phi = 0
             self.nextState = wait_img_pos
-            # self.pos   = [0.48, 0.25, -0.4]
-            # self.euler = [0, 0, 0]
-            # self.phi = 90
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)  
 
         # # 夾爪變成 drag_mode
@@ -158,6 +158,22 @@ class stockingTask:
         #     self.arm.clear_cmd()
         #     gripper.Send_Gripper_Command('3D_mode')
 
+        elif self.state == wait_speech_recognition:
+            print('self.state == wait_speech_recognition')
+            self.state = busy
+            if self.check.speech_check != 0:
+                if self.check.speech_check == 1:
+                    self.speech_obj_name = bottle
+                elif self.check.speech_check == 2:
+                    self.speech_obj_name = cellphone
+                elif self.check.speech_check == 3:
+                    self.speech_obj_name = mouse
+                self.nextState = wait_img_pos
+            else:
+                print('wait speech_check')
+                self.nextState = wait_speech_recognition
+                time.sleep(1)
+            
 
         elif self.state == wait_img_pos:        # wait_img_pos
             print('self.state == wait_img_pos')
@@ -180,12 +196,12 @@ class stockingTask:
                     else:
                         print('object over range!!')
             else:
-                print('no object!!!')
+                print('no this object!!!')
                 self.nextState = wait_img_pos
                 self.No_Object_count += 1
             self.state = self.nextState
-            if self.No_Object_count == 500:      #判斷桌上是否沒有物件
-                self.state = move_to_obj
+            if self.No_Object_count == 500:      #判斷桌上沒有此物件
+                self.state = initPose
                 # self.close_box = True                          
 
         # # 防止影像狀態機怪怪的空狀態(必定接在wait_img_pos後面)
@@ -271,6 +287,11 @@ class stockingTask:
 
 
     #-------------------------------------------------------------------------------
+    def get_speech_info(self, data):
+        self.check = SR()
+        self.check.speech_check = data.speech_check
+        return self.check
+
     def get_obj_info_cb(self, data):
         self.img_data = ROI()
         self.img_data_list = data.ROI_list
