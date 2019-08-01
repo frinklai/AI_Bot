@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 #encoding:utf-8
 
 import speech_recognition as sr
-import os
-import re
+import time
+# import os
+# import re
 # ros
 import rospy
 from speech.msg import SR
@@ -32,31 +34,33 @@ if __name__ == '__main__':
     try:
         rospy.init_node('speech_pub', anonymous=True)
         speech_recognition_pub = rospy.Publisher("/speech/check", SR, queue_size=10)
-        # SpeechRecog()
-        name = "去抓保特瓶"
         check = SR()
-        check.speech_check = 0
-        catch = name.find(u'抓')
-        if catch != -1:
-            cnt = catch + 1
-            for i in range(len(name) - catch - 1):
-                if name[cnt+i] == '瓶':
-                    print('抓瓶子')
-                    check.speech_check = 1
-                    break
-                elif name[cnt+i] == '手' and name[cnt+i+1] == '機':
-                    print('抓手機')
-                    check.speech_check = 2
-                    break
-                elif name[cnt+i] == '滑' and name[cnt+i+1] == '鼠':
-                    print('抓滑鼠')
-                    check.speech_check = 3
-                    break
-        else:
-            print('請說要"抓"什麼')
-        if check.speech_check == 0 and catch != -1:
-            print('沒有這樣東西')
-        print("check = " + str(check.speech_check))
-        speech_recognition_pub.publish(check)
+        while not rospy.is_shutdown():
+            # SpeechRecog()
+            name = "去抓保特瓶"
+            check.speech_check = 0
+            catch = name.find(u'抓')
+            if catch != -1:
+                cnt = catch + 1
+                for i in range(len(name) - catch - 1):
+                    if name[cnt+i] == '瓶':
+                        print('抓瓶子')
+                        check.speech_check = 1
+                        break
+                    elif name[cnt+i] == '手' and name[cnt+i+1] == '機':
+                        print('抓手機')
+                        check.speech_check = 2
+                        break
+                    elif name[cnt+i] == '滑' and name[cnt+i+1] == '鼠':
+                        print('抓滑鼠')
+                        check.speech_check = 3
+                        break
+            else:
+                print('請說要"抓"什麼')
+            if check.speech_check == 0 and catch != -1:
+                print('沒有這樣東西')
+            print("check = " + str(check.speech_check))
+            speech_recognition_pub.publish(check)
+            time.sleep(1)
     except rospy.ROSInterruptException:
         pass
