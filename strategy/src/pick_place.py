@@ -15,7 +15,7 @@ from arm_control  import ArmTask, SuctionTask
 from yolo_v3.msg  import ROI_array  
 from yolo_v3.msg  import ROI  
 from comm_stm32   import Gripper
-from speech       import SR
+from speech.msg   import SR
 
 count   = 0
 box_cnt = 1
@@ -78,6 +78,7 @@ class stockingTask:
         self.img_data_list = []
         self.check = SR()
         self.speech_obj_name = ' '
+        self.check.speech_check = 0
         self.name = _name
         self.state = initPose
         self.nowState = initPose 
@@ -135,8 +136,9 @@ class stockingTask:
             self.pos   = [0.4, 0.5, -0.3]
             self.euler = [0, 0, 0]
             self.phi = 0
-            self.nextState = wait_img_pos
-            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)  
+            self.nextState = wait_speech_recognition
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi) 
+            self.check.speech_check = 0 
 
         # # 夾爪變成 drag_mode
         # elif self.state == drag_grasp:
@@ -164,20 +166,23 @@ class stockingTask:
             if self.check.speech_check != 0:
                 if self.check.speech_check == 1:
                     self.speech_obj_name = 'bottle'
+                    print('抓瓶子')
                 elif self.check.speech_check == 2:
                     self.speech_obj_name = 'cellphone'
+                    print('抓手機')
                 elif self.check.speech_check == 3:
                     self.speech_obj_name = 'mouse'
+                    print('抓滑鼠')
                 self.nextState = wait_img_pos
+                time.sleep(1)
             else:
                 print('wait speech_check')
                 self.nextState = wait_speech_recognition
-                time.sleep(1)
-            
+                
 
         elif self.state == wait_img_pos:        # wait_img_pos
             print('self.state == wait_img_pos')
-            self.state = wait_img_pos #busy?
+            self.state = busy
 
             if(len(self.img_data_list)!=0):
                 self.No_Object_count = 0
@@ -199,9 +204,11 @@ class stockingTask:
                 print('no this object!!!')
                 self.nextState = wait_img_pos
                 self.No_Object_count += 1
-            self.state = self.nextState
-            if self.No_Object_count == 500:      #判斷桌上沒有此物件
+            if self.No_Object_count == 100:      #判斷桌上沒有此物件
                 self.state = initPose
+                self.No_Object_count = 0
+                print('沒有此物件')
+                time.sleep(1)
                 # self.close_box = True                          
 
         # # 防止影像狀態機怪怪的空狀態(必定接在wait_img_pos後面)
@@ -217,7 +224,6 @@ class stockingTask:
         elif self.state == move_to_obj:          
             global x
             global y
-
             print('self.state == move_to_obj')
             self.arm.set_speed(self.speed)
             
