@@ -163,11 +163,11 @@ class stockingTask:
             self.state = busy
             if self.check.speech_check != 0:
                 if self.check.speech_check == 1:
-                    self.speech_obj_name = bottle
+                    self.speech_obj_name = 'bottle'
                 elif self.check.speech_check == 2:
-                    self.speech_obj_name = cellphone
+                    self.speech_obj_name = 'cellphone'
                 elif self.check.speech_check == 3:
-                    self.speech_obj_name = mouse
+                    self.speech_obj_name = 'mouse'
                 self.nextState = wait_img_pos
             else:
                 print('wait speech_check')
