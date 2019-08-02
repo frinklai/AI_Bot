@@ -166,14 +166,13 @@ class stockingTask:
             if self.check.speech_check != 0:
                 if self.check.speech_check == 1:
                     self.speech_obj_name = 'bottle'
-                    print('抓瓶子')
                 elif self.check.speech_check == 2:
                     self.speech_obj_name = 'cellphone'
-                    print('抓手機')
                 elif self.check.speech_check == 3:
                     self.speech_obj_name = 'mouse'
-                    print('抓滑鼠')
                 self.nextState = wait_img_pos
+                self.No_Object_count = 0
+                print('catch ' + self.speech_obj_name)
                 time.sleep(1)
             else:
                 print('wait speech_check')
@@ -185,27 +184,31 @@ class stockingTask:
             self.state = busy
 
             if(len(self.img_data_list)!=0):
-                self.No_Object_count = 0
                 for i in range(len(self.img_data_list)):
-                    if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):        
-                        print("----- stra detect object_" + str(i) + " ----- ")
-                        print("object_name = " + str(self.img_data.object_name))
-                        print("score = " + str(self.img_data.score))
-                        print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
-                        print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
-                        self.nextState = move_to_obj
-                        self.obj_name = self.img_data.object_name
-                        x = (self.img_data.min_x + self.img_data.Max_x)/2
-                        y = (self.img_data.min_y + self.img_data.Max_y)/2    
-                        time.sleep(1)
+                    if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):
+                        if self.speech_obj_name == self.img_data.object_name:
+                            print("----- stra detect object_" + str(i) + " ----- ")
+                            print("object_name = " + str(self.img_data.object_name))
+                            print("score = " + str(self.img_data.score))
+                            print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
+                            print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
+                            self.nextState = move_to_obj
+                            self.obj_name = self.img_data.object_name
+                            x = (self.img_data.min_x + self.img_data.Max_x)/2
+                            y = (self.img_data.min_y + self.img_data.Max_y)/2    
+                            time.sleep(1)
+                        else:
+                            print('not this object')
+                            self.No_Object_count += 1
+                            break
                     else:
                         print('object over range!!')
             else:
                 print('no this object!!!')
                 self.nextState = wait_img_pos
                 self.No_Object_count += 1
-            if self.No_Object_count == 100:      #判斷桌上沒有此物件
-                self.state = initPose
+            if self.No_Object_count == 300:      #判斷桌上沒有此物件
+                self.nextState = initPose
                 self.No_Object_count = 0
                 print('沒有此物件')
                 time.sleep(1)
