@@ -34,6 +34,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('speech_pub', anonymous=True)
         speech_recognition_pub = rospy.Publisher("/speech/check", SR, queue_size=10)
+        rate = rospy.Rate(1) # hz
         check = SR()
         while not rospy.is_shutdown():
             # SpeechRecog()
@@ -61,7 +62,7 @@ if __name__ == '__main__':
                 print('請說要"抓"什麼')
             print('check = ' + str(check.speech_check))
             if check.speech_check != 0:
-                for i in range(300000):
-                    speech_recognition_pub.publish(check)
+                speech_recognition_pub.publish(check)
+                rate.sleep()
     except rospy.ROSInterruptException:
         pass

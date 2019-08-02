@@ -18,49 +18,29 @@ from comm_stm32   import Gripper
 from speech.msg   import SR
 
 count   = 0
-box_cnt = 1
 
 PICKORDER = 0
 SPEED_L     = 30
 
-idle            = 0
-busy            = 1
-initPose        = 2             #(第一個動作)
-goto            = 3
-down            = 4             #第一段下去
-up              = 5
-back_home       = 6
-wait_img_pos    = 7             #等影像資料
-grasping        = 8             #catch
-move_standby    = 9             #安全準備位置
-box_standby     = 10            #安全準備位置
-move_to_box     = 11            #移到箱子上方
-box_down        = 12          
-box_grasp       = 13            #loosen
-box_up          = 14         
-move_to_obj     = 15            #移到物品上方
-move_to_init    = 16            
-down_sec        = 17            #第二段下去
-standby_open    = 18            #(第二個動作)準備開抽屜的位置
-move_drawer     = 19            #(第三個動作)打開抽屜的位置
-catch_drawer    = 20            #開抽屜
-loosen_drawer   = 21            #關抽屜
-back_pos        = 22
-go_safe_point1  = 23            #開完箱子的第一個動作
-go_safe_point2  = 24            #開完箱子的第二個動作
-go_safe_point3  = 25            #開完箱子的第三個動作
-init_grasp      = 26            #夾爪變成 3D_mode
-drag_grasp      = 27            #夾爪變成 drag_mode
-standby_safe_point = 28         #開完箱子後一到這個中繼點確保安全
-close_box_standy = 29           #準備關箱子的位置
-close_box_down   = 30           #關箱子
-ready_close_box  = 31
-box_catch        = 32
-close_box_finish = 33           #離開箱子
-box_loosen       = 34
-back_safe_pose   = 35           
-mode_2D_catch    = 36
-wait_speech_recognition = 37
+idle                    = 0
+busy                    = 1
+initPose                = 2             #(第一個動作)
+goto                    = 3
+down                    = 4             #第一段下去
+up                      = 5
+back_home               = 6
+wait_img_pos            = 7             #等影像資料
+grasping                = 8             #catch
+move_standby            = 9             #安全準備位置      
+move_to_obj             = 10            #移到物品上方
+move_to_init            = 11            
+down_sec                = 12            #第二段下去
+back_pos                = 13
+init_grasp              = 14            #夾爪變成 3D_mode
+drag_grasp              = 15            #夾爪變成 drag_mode
+back_safe_pose          = 16           
+mode_2D_catch           = 17
+wait_speech_recognition = 18
 
 x = 0
 y = 0
@@ -276,17 +256,6 @@ class stockingTask:
             self.nextState = initPose
             self.pos   = [0, 0, 0.2]
             self.arm.relative_move_pose(mode='p2p', pos=self.pos)  
-
-        # # 就是stand_by, 跟stand by狀態完全一樣
-        # elif self.state == box_standby:
-        #     print('self.state == box_standby')
-        #     self.arm.set_speed(self.speed)
-        #     self.state = busy
-        #     self.nextState = move_to_box  
-        #     self.pos   = [0, 0.5, -0.4]
-        #     self.euler = [0, 0, 0]
-        #     self.phi = 0
-        #     self.arm.ikMove(mode = 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)          
 
     #-------------------------座標轉換------------------------------------------------------
     def Image_transform(self, Camera_Image_X, Camera_Image_Y):
