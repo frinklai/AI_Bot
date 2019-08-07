@@ -143,6 +143,8 @@ class stockingTask:
         elif self.state == wait_speech_recognition:
             print('self.state == wait_speech_recognition')
             self.state = busy
+            while self.check.speech_check == 0:
+                print('wait speech_check')
             if self.check.speech_check != 0:
                 if self.check.speech_check == 1:
                     self.speech_obj_name = 'bottle'
@@ -180,18 +182,17 @@ class stockingTask:
                         else:
                             print('not this object')
                             self.No_Object_count += 1
-                            break
                     else:
                         print('object over range!!')
             else:
-                print('no this object!!!')
+                print('no object!!!')
                 self.nextState = wait_img_pos
                 self.No_Object_count += 1
             if self.No_Object_count == 300:      #判斷桌上沒有此物件
                 self.nextState = initPose
                 self.No_Object_count = 0
                 print('沒有此物件')
-                time.sleep(1)
+                time.sleep(2)
                 # self.close_box = True                          
 
         # # 防止影像狀態機怪怪的空狀態(必定接在wait_img_pos後面)
