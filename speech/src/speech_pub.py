@@ -34,10 +34,11 @@ if __name__ == '__main__':
     try:
         rospy.init_node('speech_pub', anonymous=True)
         speech_recognition_pub = rospy.Publisher("/speech/check", SR, queue_size=10)
+        rate = rospy.Rate(1) # hz
         check = SR()
         while not rospy.is_shutdown():
             # SpeechRecog()
-            name = "去抓手機"
+            name = "去抓寶特瓶"
             check.speech_check = 0
             catch = name.find(u'抓')
             if catch != -1:

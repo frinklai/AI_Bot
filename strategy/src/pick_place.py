@@ -143,6 +143,8 @@ class stockingTask:
         elif self.state == wait_speech_recognition:
             print('self.state == wait_speech_recognition')
             self.state = busy
+            while self.check.speech_check == 0:
+                print('wait speech_check')
             if self.check.speech_check != 0:
                 if self.check.speech_check == 1:
                     self.speech_obj_name = 'bottle'
@@ -165,23 +167,23 @@ class stockingTask:
 
             if(len(self.img_data_list)!=0):
                 for i in range(len(self.img_data_list)):
-                    # if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):
-                    if self.speech_obj_name == self.img_data.object_name:
-                        print("----- stra detect object_" + str(i) + " ----- ")
-                        print("object_name = " + str(self.img_data.object_name))
-                        print("score = " + str(self.img_data.score))
-                        print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
-                        print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
-                        self.nextState = move_to_obj
-                        self.obj_name = self.img_data.object_name
-                        x = (self.img_data.min_x + self.img_data.Max_x)/2
-                        y = (self.img_data.min_y + self.img_data.Max_y)/2    
-                        time.sleep(1)
+                    if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):
+                        if self.speech_obj_name == self.img_data.object_name:
+                            print("----- stra detect object_" + str(i) + " ----- ")
+                            print("object_name = " + str(self.img_data.object_name))
+                            print("score = " + str(self.img_data.score))
+                            print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
+                            print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
+                            self.nextState = move_to_obj
+                            self.obj_name = self.img_data.object_name
+                            x = (self.img_data.min_x + self.img_data.Max_x)/2
+                            y = (self.img_data.min_y + self.img_data.Max_y)/2    
+                            time.sleep(1)
+                        else:
+                            print('not this object')
+                            self.No_Object_count += 1
                     else:
-                        print('not this object')
-                        self.No_Object_count += 1
-                    # else:
-                    #     print('object over range!!')
+                        print('object over range!!')
             else:
                 print('no object!!!')
                 self.nextState = wait_img_pos
