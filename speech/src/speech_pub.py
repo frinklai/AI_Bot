@@ -37,7 +37,7 @@ if __name__ == '__main__':
         check = SR()
         while not rospy.is_shutdown():
             # SpeechRecog()
-            name = "去抓保特瓶"
+            name = "去抓手機"
             check.speech_check = 0
             catch = name.find(u'抓')
             if catch != -1:
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                 print('請說要"抓"什麼')
             print('check = ' + str(check.speech_check))
             if check.speech_check != 0:
-                for i in range(300000):
-                    speech_recognition_pub.publish(check)
+                speech_recognition_pub.publish(check)
+                time.sleep(1)
     except rospy.ROSInterruptException:
         pass
