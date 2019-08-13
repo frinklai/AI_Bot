@@ -28,19 +28,11 @@ initPose                = 2             #(第一個動作)
 goto                    = 3
 down                    = 4             #第一段下去
 up                      = 5
-back_home               = 6
-wait_img_pos            = 7             #等影像資料
-grasping                = 8             #catch
-move_standby            = 9             #安全準備位置      
-move_to_obj             = 10            #移到物品上方
-move_to_init            = 11            
-down_sec                = 12            #第二段下去
-back_pos                = 13
-init_grasp              = 14            #夾爪變成 3D_mode
-drag_grasp              = 15            #夾爪變成 drag_mode
-back_safe_pose          = 16           
-mode_2D_catch           = 17
-wait_speech_recognition = 18
+wait_img_pos            = 6             #等影像資料
+move_to_obj             = 7             #移到物品上方
+down_sec                = 8             #第二段下去         
+wait_speech_recognition = 9
+pickObject              = 10
 
 x = 0
 y = 0
@@ -71,8 +63,8 @@ class stockingTask:
         self.sucAngle = 0
         self.No_Object_count = 0
         self.obj_name = ''
-        self.standby_safeFlag = True       #  第一次開完箱子的狀態切換（只有開箱子用的到）
-        self.close_box = False             #  關箱子的旗標
+        self.standby_safeFlag = True 
+        self.close_box = False             
         self.finish_pos = False
         self.mode_2D = False
         self.finish = False
@@ -85,6 +77,7 @@ class stockingTask:
             self.suction = SuctionTask(self.name + '_gazebo')
         else:
             self.suction = SuctionTask(self.name)
+            rospy.on_shutdown(self.suction.gripper_vaccum_off)
     
     def init_pub_sub(self):
         rospy.Subscriber('/speech/check',     SR       , self.get_speech_info)
@@ -120,26 +113,6 @@ class stockingTask:
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi) 
             self.check.speech_check = 0 
 
-        # # 夾爪變成 drag_mode
-        # elif self.state == drag_grasp:
-        #     print('self.state == drag_grasp')
-        #     self.state = busy
-        #     if self.close_box == False:       #判斷是否為要關箱子
-        #         self.nextState = move_drawer
-        #     else:
-        #         self.nextState = standby_safe_point # 現在在stand by, 到safe_point時有機會繞兩次大圈, 但不會有事
-        #     self.arm.clear_cmd()
-        #     gripper.Send_Gripper_Command('drag_mode')
-
-        # # 夾爪初始化
-        # elif self.state == init_grasp:
-        #     print('self.state == init_grasp')
-        #     self.state = busy
-        #     #self.nextState = wait_img_pos
-        #     self.nextState = move_to_obj
-        #     self.arm.clear_cmd()
-        #     gripper.Send_Gripper_Command('3D_mode')
-
         elif self.state == wait_speech_recognition:
             print('self.state == wait_speech_recognition')
             self.state = busy
@@ -152,7 +125,7 @@ class stockingTask:
                     self.speech_obj_name = 'cellphone'
                 elif self.check.speech_check == 3:
                     self.speech_obj_name = 'mouse'
-                self.nextState = wait_img_pos
+                self.nextState = move_to_obj
                 self.No_Object_count = 0
                 print('catch ' + self.speech_obj_name)
                 time.sleep(1)
@@ -211,12 +184,12 @@ class stockingTask:
             print('self.state == move_to_obj')
             self.arm.set_speed(self.speed)
             
-            # posX , posY = self.Image_transform(x, y)
+            posX , posY = self.Image_transform(x, y)
 
             self.state = busy
             self.nextState = down
-            # self.pos   = [round(posX, 4), round(posY, 4), -0.45]
-            self.pos   = [0.3, 0.4, -0.45]
+            self.pos   = [round(posX, 4), round(posY, 4), -0.45]
+            # self.pos   = [0.3, 0.4, -0.45]
             print(self.pos)
             self.euler = [0, 0, 0]
             self.phi = 0
@@ -239,16 +212,21 @@ class stockingTask:
             self.pos  = [0, 0, -0.1]
             self.arm.relative_move_pose(mode='p2p', pos=self.pos)
 
-        # elif self.state == grasping:
-        #     print('self.state == ready to grasping')
-        #     self.arm.clear_cmd()
-        #     self.state = busy
-        #     if self.mode_2D == True:
-        #         gripper.Send_Gripper_Command('2D_catch')
-        #     else:
-        #         gripper.Send_Gripper_Command('Catch_all')
-        #     self.nextState = up
-                
+        elif self.state == pickObject:
+            print('self.state == pickObject')
+            self.state = busy
+            self.nextState = up 
+            self.suction.gripper_vaccum_on()
+            time.sleep(1)
+            # self.suction.gripper_vaccum_off()
+            
+            # rospy.sleep(1)
+            # if 'lunchbox' in objectName[self.pickList]:
+            #     self.arm.set_speed(30)
+            # else:
+            #     self.arm.set_speed(3)
+            # self.arm.noa_move_suction('line', suction_angle=0, n=0, o=0, a=0.03)
+            # rospy.sleep(.1)
 
         elif self.state == up:               # up
             print('self.state == up')
@@ -288,10 +266,6 @@ class stockingTask:
 
 if __name__ == '__main__':
     rospy.init_node('gripperasd', anonymous=True)
-    # gripper = Gripper()
-    # gripper.Send_Gripper_Command('3D_mode')     # required for gripper initial
-    # gripper.Send_Gripper_Command('Catch_all')
-    # gripper.Send_Gripper_Command('rot_to_norm')
     
     left  = stockingTask('left')       # Set up left arm controller
     rospy.sleep(.3)
