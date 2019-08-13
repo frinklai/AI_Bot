@@ -31,9 +31,9 @@ sys.path.insert(1, pth.python3_site_pkg_path)
 
 class YOLO(object):
     _defaults = {
-        "model_path"  : pth.model_data_path + 'model_data/yolo.h5',
+        "model_path"  : pth.model_data_path + 'model_data/trained_vision_final.h5',
         "anchors_path": pth.model_data_path + 'model_data/yolo_anchors.txt',
-        "classes_path": pth.model_data_path + 'model_data/coco_classes.txt',
+        "classes_path": pth.model_data_path + 'model_data/vision_classes.txt',
 
         "score" : 0.3,
         "iou" : 0.45,

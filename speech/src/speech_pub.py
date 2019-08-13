@@ -62,7 +62,9 @@ if __name__ == '__main__':
                 print('請說要"抓"什麼')
             print('check = ' + str(check.speech_check))
             if check.speech_check != 0:
-                speech_recognition_pub.publish(check)
-                time.sleep(1)
+                for i in range(2):
+                    speech_recognition_pub.publish(check)
+                    rospy.sleep(1)
+                # break
     except rospy.ROSInterruptException:
         pass
