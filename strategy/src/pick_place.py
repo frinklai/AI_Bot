@@ -118,8 +118,6 @@ class stockingTask:
         elif self.state == wait_speech_recognition:
             print('self.state == wait_speech_recognition')
             self.state = busy
-            while self.check.speech_check == 0:
-                print('wait speech_check')
             if self.check.speech_check != 0:
                 if self.check.speech_check == 1:
                     self.speech_obj_name = 'bottle'
@@ -133,7 +131,6 @@ class stockingTask:
                 rospy.sleep(1)
             else:
                 print('wait speech_check')
-                rospy.sleep(.3)
                 self.nextState = wait_speech_recognition
                 
 
