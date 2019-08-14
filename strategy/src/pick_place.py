@@ -33,6 +33,8 @@ move_to_obj             = 7             #移到物品上方
 down_sec                = 8             #第二段下去         
 wait_speech_recognition = 9
 pickObject              = 10
+moveObject              = 11
+placeObject             = 12
 
 x = 0
 y = 0
@@ -182,14 +184,12 @@ class stockingTask:
             global x
             global y
             print('self.state == move_to_obj')
-            self.arm.set_speed(self.speed)
-            
+            self.arm.set_speed(self.faster_speed)
             posX , posY = self.Image_transform(x, y)
-
             self.state = busy
             self.nextState = down
             self.pos   = [round(posX, 4), round(posY, 4), -0.45]
-            # self.pos   = [0.3, 0.4, -0.45]
+            self.pos   = [0.3, 0.4, -0.45]
             print(self.pos)
             self.euler = [0, 0, 0]
             self.phi = 0
@@ -208,7 +208,7 @@ class stockingTask:
             print('self.state == down_sec')
             self.arm.set_speed(self.speed)
             self.state = busy
-            self.nextState = up  
+            self.nextState = pickObject  
             self.pos  = [0, 0, -0.1]
             self.arm.relative_move_pose(mode='p2p', pos=self.pos)
 
@@ -217,10 +217,7 @@ class stockingTask:
             self.state = busy
             self.nextState = up 
             self.suction.gripper_vaccum_on()
-            time.sleep(1)
-            # self.suction.gripper_vaccum_off()
-            
-            # rospy.sleep(1)
+            rospy.sleep(1)
             # if 'lunchbox' in objectName[self.pickList]:
             #     self.arm.set_speed(30)
             # else:
@@ -232,10 +229,28 @@ class stockingTask:
             print('self.state == up')
             self.arm.set_speed(self.faster_speed)
             self.state = busy
-            self.nextState = initPose
+            self.nextState = moveObject
             self.pos   = [0, 0, 0.2]
-            self.arm.relative_move_pose(mode='p2p', pos=self.pos)  
+            self.arm.relative_move_pose(mode='p2p', pos=self.pos)
 
+        elif self.state == moveObject:
+            print('self.state == moveObject')
+            self.arm.set_speed(self.faster_speed)
+            self.state = busy
+            self.nextState = placeObject
+            self.pos   = [0.4, 0.5, -0.3]
+            self.euler = [0, 0, 0]
+            self.phi = 0
+            self.nextState = placeObject
+            self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi) 
+
+        elif self.state == placeObject:
+            print('self.state == placeObject')
+            self.state = busy
+            self.nextState = initPose
+            self.suction.gripper_vaccum_off()
+            rospy.sleep(1)
+            
     #-------------------------座標轉換------------------------------------------------------
     def Image_transform(self, Camera_Image_X, Camera_Image_Y):
         Arm_posX = (866 - Camera_Image_Y)*0.000889 - 0.4795     
