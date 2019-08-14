@@ -127,12 +127,13 @@ class stockingTask:
                     self.speech_obj_name = 'cellphone'
                 elif self.check.speech_check == 3:
                     self.speech_obj_name = 'mouse'
-                self.nextState = move_to_obj
+                self.nextState = wait_img_pos
                 self.No_Object_count = 0
                 print('catch ' + self.speech_obj_name)
-                time.sleep(1)
+                rospy.sleep(1)
             else:
                 print('wait speech_check')
+                rospy.sleep(.3)
                 self.nextState = wait_speech_recognition
                 
 
@@ -167,7 +168,7 @@ class stockingTask:
                 self.nextState = initPose
                 self.No_Object_count = 0
                 print('沒有此物件')
-                time.sleep(2)
+                rospy.sleep(2)
                 # self.close_box = True                          
 
         # # 防止影像狀態機怪怪的空狀態(必定接在wait_img_pos後面)

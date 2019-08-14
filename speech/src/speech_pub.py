@@ -65,6 +65,5 @@ if __name__ == '__main__':
                 for i in range(2):
                     speech_recognition_pub.publish(check)
                     rospy.sleep(1)
-                # break
     except rospy.ROSInterruptException:
         pass
