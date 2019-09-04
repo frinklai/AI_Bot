@@ -55,7 +55,8 @@
 
 #include "robotis_controller/robotis_controller.h"
 #include "robotis_device/robot.h"
-
+//++
+#include "manipulator_h_base_module_msgs/GetAdaptiveLine.h"
 
 namespace robotis_manipulator_h
 {
@@ -123,6 +124,10 @@ public:
   bool getKinematicsPoseCallback(manipulator_h_base_module_msgs::GetKinematicsPose::Request &req,
                                  manipulator_h_base_module_msgs::GetKinematicsPose::Response &res);
 
+  //++                               
+  bool getAdaptiveLineCallback(manipulator_h_base_module_msgs::GetAdaptiveLine::Request &req,
+                               manipulator_h_base_module_msgs::GetAdaptiveLine::Response &res);
+  bool Line_phi;
   /* ROS Calculation Functions */
   void generateInitPoseTrajProcess();
   void generateJointTrajProcess();
