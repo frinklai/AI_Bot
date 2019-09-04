@@ -32,6 +32,7 @@ BaseModule::BaseModule()
 {
 //++
   wirst_avoid   = false;
+  Line_phi      = false;
 
   stop_flag     = false;
   wait_flag     = false;
@@ -148,6 +149,10 @@ void BaseModule::queueThread()
                                                                        &BaseModule::getJointPoseCallback, this);
   ros::ServiceServer get_kinematics_pose_server = ros_node.advertiseService("/robotis/base/get_kinematics_pose",
                                                                             &BaseModule::getKinematicsPoseCallback, this);
+  //++
+  ros::ServiceServer get_adaptive_line_server = ros_node.advertiseService("/robotis/base/get_adaptive_line",
+                                                                            &BaseModule::getAdaptiveLineCallback, this);
+
   slide_->slide_fdb_sub = ros_node.subscribe("/slide_feedback_msg", 10, &slide_control::slideFeedback, slide_);
 
   while (ros_node.ok())
@@ -298,6 +303,33 @@ bool BaseModule::getKinematicsPoseCallback(manipulator_h_base_module_msgs::GetKi
   // std::cout<<"euler = "<<manipulator_->manipulator_link_data_[END_LINK]->euler *180/M_PI<<std::endl;
   return true;
 }
+//++
+bool BaseModule::getAdaptiveLineCallback(manipulator_h_base_module_msgs::GetAdaptiveLine::Request &req,
+                                         manipulator_h_base_module_msgs::GetAdaptiveLine::Response &res)
+{
+  if (enable_ == false)
+    return false;
+  if (req.command == 1)
+  {
+    ROS_INFO("res.openflag = true. ");
+    res.openflag = true;
+    Line_phi = res.openflag;
+  }
+  else if (req.command == 0)
+  {
+    ROS_INFO("res.openflag = false. ");
+    res.openflag = false;
+    Line_phi = res.openflag;
+  }
+  else
+  {
+    ROS_INFO("Please input again. ");
+    res.openflag = false;
+    Line_phi = res.openflag;
+  }
+  
+  return true;
+}
 
 void BaseModule::kinematicsPoseMsgCallback(const manipulator_h_base_module_msgs::KinematicsPose::ConstPtr& msg)
 {
@@ -372,7 +404,7 @@ void BaseModule::p2pPoseMsgCallback(const manipulator_h_base_module_msgs::P2PPos
   // std::cout<<"<<<<<<<<<<<<<<<<<<<slide_->goal_slide_pos<<<<<<<<<<<<<<<<<"<<std::endl<<slide_->goal_slide_pos<<std::endl;
   
   bool    ik_success = manipulator_->inverseKinematics(robotis_->ik_id_end_,
-                                                            p2p_positoin, p2p_rotation, p2p_phi, slide_->goal_slide_pos, true);
+                                                            p2p_positoin, p2p_rotation, p2p_phi, slide_->goal_slide_pos, true, Line_phi);
   
   if (ik_success == true && slide_success == true)
   {
@@ -663,221 +695,226 @@ void BaseModule::process(std::map<std::string, robotis_framework::Dynamixel *> d
 
   manipulator_->forwardKinematics(7);  // 0 chang to 7 : how many joint
   
-  //slide_->slide_pos = manipulator_->manipulator_link_data_[0]->slide_position_;
-  /* ----- send trajectory ----- */
-
-//    ros::Time time = ros::Time::now();
-/*******************************************new_fuction********************************************/
-  if (robotis_->is_moving_ == true && robotis_->cnt_ < robotis_->all_time_steps_)
+  if(Line_phi == true)
   {
-    Eigen::VectorXd Old_JointAngle(8);
-    wirst_avoid = CompareNextPos();
-    manipulator_->get_WirstAvoid(wirst_avoid);
-    if (robotis_->cnt_ == 0)
+    
+    if (robotis_->is_moving_ == true && robotis_->cnt_ < robotis_->all_time_steps_)
     {
-      robotis_->ik_start_rotation_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->orientation_;
-      robotis_->ik_start_phi_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->phi_;
-      for (int id = 0; id <= MAX_JOINT_ID; id++)
-        Old_JointAngle(id) = manipulator_->manipulator_link_data_[id]->joint_angle_;
-    }
-    if (robotis_->ik_solve_ == true)
-    {
-
-      bool setIk_success;
-      setIk_success = robotis_->setInverseKinematics(robotis_->cnt_, robotis_->all_time_steps_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_, Old_JointAngle);
-      
-      int     max_iter      = 30;
-      double  ik_tol        = 1e-3;
-      double  tar_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-
-      robotis_->is_ik = true;
-
-      bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
-                                                              robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false);
-      if (ik_success && setIk_success)
-      {
-        
-        for (int id = 1; id <= MAX_JOINT_ID; id++)
-          joint_state_->goal_joint_state_[id].position_ = manipulator_->manipulator_link_data_[id]->joint_angle_;
-        slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-        slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-        if(manipulator_->manipulator_link_data_[0]->singularity_ && robotis_->cnt_ > 1)
-        {
-          
-          std::cout<<"====robotis_->cnt_====="<<robotis_->cnt_<<" ";
-          robotis_->cnt_--;
-          // robotis_->cnt_ = (robotis_->cnt_ > 1) ? (robotis_->cnt_-1) : robotis_->cnt_;
-          std::cout<<robotis_->cnt_<<std::endl;
-          publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "singularity");
-        }
-          // std::cout<<"==========================process after ik"<<std::endl;
-          // manipulator_->forwardKinematics(7);
-          // assert(false);
-      }
-      else
-      {
-        ROS_INFO("[end] send trajectory (ik failed)");
-        publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "End Trajectory (IK Failed)");
-
-        robotis_->is_moving_ = false;
-        robotis_->ik_solve_ = false;
-        robotis_->cnt_ = 0;
-      }
-      robotis_->is_ik = false;
-    }
-    else
-    {
-      for (int id = 1; id <= MAX_JOINT_ID; id++)
-        joint_state_->goal_joint_state_[id].position_ = robotis_->calc_joint_tra_(robotis_->cnt_, id);
-
-      slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-      slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-    }
-
-    robotis_->cnt_++;
-  }
-/**********************************************end*************************************************/
-/*
-  if (robotis_->is_moving_ == true && robotis_->cnt_ < robotis_->all_time_steps_)
-  {
-    if (robotis_->cnt_ == 0)
-    {
-      robotis_->ik_start_rotation_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->orientation_;
-      robotis_->ik_start_phi_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->phi_;
-    }
-    if (robotis_->ik_solve_ == true)
-    {
-      robotis_->setInverseKinematics(robotis_->cnt_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_);
-
-      int     max_iter      = 30;
-      double  ik_tol        = 1e-3;
-      double  tar_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-
-      robotis_->is_ik = true;
-      //----------------------------------------------------------------------------
-      //--------------------------start to avoid joint limiit-----------------------
-      //----------------------------------------------------------------------------
-      double phi_add_rate = 0.05; //deg
-
-      robotis_->ik_target_phi_ = robotis_->ik_start_phi_;
-      std::cout<<"[start] robotis_->ik_target_phi_ = "<<robotis_->ik_target_phi_*180/M_PI <<std::endl;
-      std::vector<int> idx = manipulator_->findRoute(robotis_->ik_id_end_);
       Eigen::VectorXd Old_JointAngle(8);
-      for (int id = 0; id < idx.size(); id++)
-        Old_JointAngle[idx[id]] = manipulator_->manipulator_link_data_[idx[id]]->joint_angle_;
-
-      double pos_phi_joint_lmt_degree, curr_phi_joint_lmt_degree, neg_phi_joint_lmt_degree, tmp_joint_lmt_degree, tmp_wrist_sing_degree;
-      double joint_lmt_degree = 999;
-      for(int i=-1 ; i<=1 ; i++)
+      wirst_avoid = CompareNextPos();
+      manipulator_->get_WirstAvoid(wirst_avoid);
+      bool setIk_success;
+      if (robotis_->cnt_ == 0)
       {
-        manipulator_->is_est_joint_limit = true;
-        manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
-                                                              robotis_->ik_target_rotation_, (robotis_->ik_target_phi_)+phi_add_rate*i*M_PI/180, tar_slide_pos, false);
-        manipulator_->is_est_joint_limit = false;
-        joint_lmt_degree = 999;
-        for(int j=1 ; j<=7 ; j++)
-        {
-          tmp_joint_lmt_degree = manipulator_->est_joint_limit_degree(manipulator_->manipulator_link_data_[j]->joint_limit_max_, 
-                                                        manipulator_->manipulator_link_data_[j]->joint_limit_min_, 
-                                                        manipulator_->JointAngle_for_est_lmt[j]);
-          tmp_wrist_sing_degree = manipulator_->est_wrist_singularity_degree(manipulator_->JointAngle_for_est_lmt[2], manipulator_->JointAngle_for_est_lmt[5]);
+        robotis_->ik_start_rotation_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->orientation_;
+        robotis_->ik_start_phi_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->phi_;
+        for (int id = 0; id <= MAX_JOINT_ID; id++)
+          Old_JointAngle(id) = manipulator_->manipulator_link_data_[id]->joint_angle_;
+      }
+      if (robotis_->ik_solve_ == true)
+      {
+          
+        setIk_success = robotis_->setInverseKinematics(robotis_->cnt_, robotis_->all_time_steps_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_, Old_JointAngle, Line_phi);
 
-          //tmp_joint_lmt_degree = (tmp_joint_lmt_degree+tmp_wrist_sing_degree)/2.0; // uncomment here for consider wrist singularity
-          if(tmp_joint_lmt_degree < joint_lmt_degree)
+        int     max_iter      = 30;
+        double  ik_tol        = 1e-3;
+        double  tar_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+
+        robotis_->is_ik = true;
+        //----------------------------------------------------------------------------
+        //--------------------------start to avoid joint limiit-----------------------
+        //----------------------------------------------------------------------------
+        double phi_add_rate = 0.05; //deg
+
+        robotis_->ik_target_phi_ = robotis_->ik_start_phi_;
+        std::cout<<"[start] robotis_->ik_target_phi_ = "<<robotis_->ik_target_phi_*180/M_PI <<std::endl;
+        std::vector<int> idx = manipulator_->findRoute(robotis_->ik_id_end_);
+        Eigen::VectorXd Old_JointAngle(8);
+        for (int id = 0; id < idx.size(); id++)
+          Old_JointAngle[idx[id]] = manipulator_->manipulator_link_data_[idx[id]]->joint_angle_;
+
+        double pos_phi_joint_lmt_degree, curr_phi_joint_lmt_degree, neg_phi_joint_lmt_degree, tmp_joint_lmt_degree, tmp_wrist_sing_degree;
+        double joint_lmt_degree = 999;
+        for(int i=-1 ; i<=1 ; i++)
+        {
+          manipulator_->is_est_joint_limit = true;
+          manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
+                                                                robotis_->ik_target_rotation_, (robotis_->ik_target_phi_)+phi_add_rate*i*M_PI/180, tar_slide_pos, false, Line_phi);
+          manipulator_->is_est_joint_limit = false;
+          joint_lmt_degree = 999;
+          for(int j=1 ; j<=7 ; j++)
           {
-            joint_lmt_degree = tmp_joint_lmt_degree;
+            tmp_joint_lmt_degree = manipulator_->est_joint_limit_degree(manipulator_->manipulator_link_data_[j]->joint_limit_max_, 
+                                                          manipulator_->manipulator_link_data_[j]->joint_limit_min_, 
+                                                          manipulator_->JointAngle_for_est_lmt[j]);
+            tmp_wrist_sing_degree = manipulator_->est_wrist_singularity_degree(manipulator_->JointAngle_for_est_lmt[2], manipulator_->JointAngle_for_est_lmt[5]);
+
+            //tmp_joint_lmt_degree = (tmp_joint_lmt_degree+tmp_wrist_sing_degree)/2.0; // uncomment here for consider wrist singularity
+            if(tmp_joint_lmt_degree < joint_lmt_degree)
+            {
+              joint_lmt_degree = tmp_joint_lmt_degree;
+            }
+          }
+
+          //joint_lmt_degree more small, more dangerous
+          if(i==-1){
+            neg_phi_joint_lmt_degree  = joint_lmt_degree;
+          }
+          else if(i==0){
+            curr_phi_joint_lmt_degree = joint_lmt_degree;
+          }
+          else{
+            pos_phi_joint_lmt_degree  = joint_lmt_degree;
           }
         }
-
-        //joint_lmt_degree more small, more dangerous
-        if(i==-1){
-          neg_phi_joint_lmt_degree  = joint_lmt_degree;
-        }
-        else if(i==0){
-          curr_phi_joint_lmt_degree = joint_lmt_degree;
-        }
-        else{
-          pos_phi_joint_lmt_degree  = joint_lmt_degree;
-        }
-      }
-      std::cout<<"pos/zero/neg phi's joint lmt score = "<<pos_phi_joint_lmt_degree  <<", " 
-                                                        <<curr_phi_joint_lmt_degree <<", "  
-                                                        <<neg_phi_joint_lmt_degree  <<std::endl;
-      // set phi_add_rate
-      double max_phi_add_rate = 0.5;
-      double joint_angle_diff_degree = fabs(cos( (90*M_PI/180) + manipulator_->manipulator_link_data_[4]->joint_angle_));
-      // phi_add_rate = max_phi_add_rate* (joint_angle_diff_degree/10) * (1-curr_phi_joint_lmt_degree);
-      phi_add_rate = max_phi_add_rate * (1-curr_phi_joint_lmt_degree);
-      
-      std::cout<<"phi_add_rate = " <<phi_add_rate <<std::endl;
-      std::cout<<"joint_lmt_degree = " <<joint_lmt_degree <<std::endl;
-
-      // Limit max phi add rate
-      if(phi_add_rate > max_phi_add_rate)
-        phi_add_rate = max_phi_add_rate;
-      // send the dir with max score
-      if((neg_phi_joint_lmt_degree > curr_phi_joint_lmt_degree)&&(neg_phi_joint_lmt_degree > pos_phi_joint_lmt_degree))
-      {
-        std::cout<<"========== [send NEGATIVE phi] ==========" <<std::endl;
-        robotis_->ik_target_phi_ = (robotis_->ik_target_phi_)-phi_add_rate*M_PI/180;
-      }
-
-      else if((pos_phi_joint_lmt_degree > curr_phi_joint_lmt_degree)&&(pos_phi_joint_lmt_degree > neg_phi_joint_lmt_degree))
-      {
-        std::cout<<"========== [send POSSITIVE phi] ==========" <<std::endl;
-        robotis_->ik_target_phi_ = (robotis_->ik_target_phi_)+phi_add_rate*M_PI/180;
-      }
-
-      else
-      {
-        std::cout<<"========== [send CURRENT phi] ==========" <<std::endl;
-        robotis_->ik_target_phi_ = (robotis_->ik_target_phi_);
-      }
+        std::cout<<"pos/zero/neg phi's joint lmt score = "<<pos_phi_joint_lmt_degree  <<", " 
+                                                          <<curr_phi_joint_lmt_degree <<", "  
+                                                          <<neg_phi_joint_lmt_degree  <<std::endl;
+        // set phi_add_rate
+        double max_phi_add_rate = 0.5;
+        double joint_angle_diff_degree = fabs(cos( (90*M_PI/180) + manipulator_->manipulator_link_data_[4]->joint_angle_));
+        // phi_add_rate = max_phi_add_rate* (joint_angle_diff_degree/10) * (1-curr_phi_joint_lmt_degree);
+        phi_add_rate = max_phi_add_rate * (1-curr_phi_joint_lmt_degree);
         
-      std::cout<<"[end] robotis_->ik_target_phi_ = "<<robotis_->ik_target_phi_*180/M_PI <<std::endl;
-      robotis_->ik_start_phi_ = robotis_->ik_target_phi_;
-      std::cout<<"======================================\n " <<std::endl;
-      //----------------------------------------------------------------------------
-      //--------------------------end to avoid joint limit -------------------------
-      //----------------------------------------------------------------------------
-      
-      robotis_->setInverseKinematics(robotis_->cnt_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_);
-      bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
-                                                              robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false);
-      if (ik_success == true)
+        std::cout<<"phi_add_rate = " <<phi_add_rate <<std::endl;
+        std::cout<<"joint_lmt_degree = " <<joint_lmt_degree <<std::endl;
+
+        // Limit max phi add rate
+        if(phi_add_rate > max_phi_add_rate)
+          phi_add_rate = max_phi_add_rate;
+        // send the dir with max score
+        if((neg_phi_joint_lmt_degree > curr_phi_joint_lmt_degree)&&(neg_phi_joint_lmt_degree > pos_phi_joint_lmt_degree))
+        {
+          std::cout<<"========== [send NEGATIVE phi] ==========" <<std::endl;
+          robotis_->ik_target_phi_ = (robotis_->ik_target_phi_)-phi_add_rate*M_PI/180;
+        }
+
+        else if((pos_phi_joint_lmt_degree > curr_phi_joint_lmt_degree)&&(pos_phi_joint_lmt_degree > neg_phi_joint_lmt_degree))
+        {
+          std::cout<<"========== [send POSSITIVE phi] ==========" <<std::endl;
+          robotis_->ik_target_phi_ = (robotis_->ik_target_phi_)+phi_add_rate*M_PI/180;
+        }
+
+        else
+        {
+          std::cout<<"========== [send CURRENT phi] ==========" <<std::endl;
+          robotis_->ik_target_phi_ = (robotis_->ik_target_phi_);
+        }
+          
+        std::cout<<"[end] robotis_->ik_target_phi_ = "<<robotis_->ik_target_phi_*180/M_PI <<std::endl;
+        robotis_->ik_start_phi_ = robotis_->ik_target_phi_;
+        std::cout<<"======================================\n " <<std::endl;
+        //----------------------------------------------------------------------------
+        //--------------------------end to avoid joint limit -------------------------
+        //----------------------------------------------------------------------------
+        setIk_success = robotis_->setInverseKinematics(robotis_->cnt_, robotis_->all_time_steps_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_, Old_JointAngle, Line_phi);
+        bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
+                                                                robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false, Line_phi);
+        if (ik_success == true)
+        {
+          for (int id = 1; id <= MAX_JOINT_ID; id++)
+            joint_state_->goal_joint_state_[id].position_ = manipulator_->manipulator_link_data_[id]->joint_angle_;
+          slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+          slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+          if(manipulator_->manipulator_link_data_[0]->singularity_ && robotis_->cnt_ > 1)
+          {
+            std::cout<<"====robotis_->cnt_====="<<robotis_->cnt_<<" ";
+            robotis_->cnt_--;
+            std::cout<<robotis_->cnt_<<std::endl;
+          }
+        }
+        else
+        {
+          ROS_INFO("[end] send trajectory (ik failed)");
+          publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "End Trajectory (IK Failed)");
+          robotis_->is_moving_ = false;
+          robotis_->ik_solve_ = false;
+          robotis_->cnt_ = 0;
+        }
+        robotis_->is_ik = false;
+      }
+      else //(robotis_->ik_solve_ == false)
       {
         for (int id = 1; id <= MAX_JOINT_ID; id++)
-          joint_state_->goal_joint_state_[id].position_ = manipulator_->manipulator_link_data_[id]->joint_angle_;
+          joint_state_->goal_joint_state_[id].position_ = robotis_->calc_joint_tra_(robotis_->cnt_, id);
         slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
         slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-        if(manipulator_->manipulator_link_data_[0]->singularity_ && robotis_->cnt_ > 1)
+      }
+
+      robotis_->cnt_++;
+    }
+  }
+  else
+  {
+    if (robotis_->is_moving_ == true && robotis_->cnt_ < robotis_->all_time_steps_)
+    {
+      Eigen::VectorXd Old_JointAngle(8);
+      wirst_avoid = CompareNextPos();
+      manipulator_->get_WirstAvoid(wirst_avoid);
+      if (robotis_->cnt_ == 0)
+      {
+        robotis_->ik_start_rotation_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->orientation_;
+        robotis_->ik_start_phi_ = manipulator_->manipulator_link_data_[robotis_->ik_id_end_]->phi_;
+        for (int id = 0; id <= MAX_JOINT_ID; id++)
+          Old_JointAngle(id) = manipulator_->manipulator_link_data_[id]->joint_angle_;
+      }
+      if (robotis_->ik_solve_ == true)
+      {
+
+        bool setIk_success;
+        setIk_success = robotis_->setInverseKinematics(robotis_->cnt_, robotis_->all_time_steps_, robotis_->ik_start_rotation_, robotis_->ik_start_phi_, Old_JointAngle, Line_phi);
+        
+        int     max_iter      = 30;
+        double  ik_tol        = 1e-3;
+        double  tar_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+
+        robotis_->is_ik = true;
+    
+        bool    ik_success  = manipulator_->inverseKinematics(robotis_->ik_id_end_,robotis_->ik_target_position_, 
+                                                                robotis_->ik_target_rotation_, robotis_->ik_target_phi_, tar_slide_pos, false, Line_phi);
+        if (ik_success && setIk_success)
         {
-          std::cout<<"====robotis_->cnt_====="<<robotis_->cnt_<<" ";
-          robotis_->cnt_--;
-          std::cout<<robotis_->cnt_<<std::endl;
+          
+          for (int id = 1; id <= MAX_JOINT_ID; id++)
+            joint_state_->goal_joint_state_[id].position_ = manipulator_->manipulator_link_data_[id]->joint_angle_;
+          slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+          slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+          if(manipulator_->manipulator_link_data_[0]->singularity_ && robotis_->cnt_ > 1)
+          {
+            std::cout<<"====robotis_->cnt_====="<<robotis_->cnt_<<" ";
+            robotis_->cnt_--;
+            // robotis_->cnt_ = (robotis_->cnt_ > 1) ? (robotis_->cnt_-1) : robotis_->cnt_;
+            std::cout<<robotis_->cnt_<<std::endl;
+            publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "singularity");
+          }
+            // std::cout<<"==========================process after ik"<<std::endl;
+            // manipulator_->forwardKinematics(7);
+            // assert(false);
         }
+        else
+        {
+          ROS_INFO("[end] send trajectory (ik failed)");
+          publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "End Trajectory (IK Failed)");
+
+          robotis_->is_moving_ = false;
+          robotis_->ik_solve_ = false;
+          robotis_->cnt_ = 0;
+        }
+        robotis_->is_ik = false;
       }
       else
       {
-        ROS_INFO("[end] send trajectory (ik failed)");
-        publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "End Trajectory (IK Failed)");
-        robotis_->is_moving_ = false;
-        robotis_->ik_solve_ = false;
-        robotis_->cnt_ = 0;
-      }
-      robotis_->is_ik = false;
-    }
-    else //(robotis_->ik_solve_ == false)
-    {
-      for (int id = 1; id <= MAX_JOINT_ID; id++)
-        joint_state_->goal_joint_state_[id].position_ = robotis_->calc_joint_tra_(robotis_->cnt_, id);
-      slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-      slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
-    }
+        for (int id = 1; id <= MAX_JOINT_ID; id++)
+          joint_state_->goal_joint_state_[id].position_ = robotis_->calc_joint_tra_(robotis_->cnt_, id);
 
-    robotis_->cnt_++;
+        slide_->goal_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+        slide_->result_slide_pos = robotis_->calc_slide_tra_(robotis_->cnt_, 0);
+      }
+
+      robotis_->cnt_++;
+    }
   }
-*/
+  
   /*----- set joint data -----*/
   for (std::map<std::string, robotis_framework::DynamixelState *>::iterator state_iter = result_.begin();
        state_iter != result_.end(); state_iter++)
