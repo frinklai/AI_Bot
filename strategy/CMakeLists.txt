@@ -48,9 +48,10 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-#add_message_files(
-#  FILES
-#)
+add_message_files(
+  FILES
+  speech_status.msg
+)
 
 ## Generate services in the 'srv' folder
  add_service_files(
@@ -101,10 +102,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES strategy
+  INCLUDE_DIRS include
+  LIBRARIES strategy
   CATKIN_DEPENDS geometry_msgs roscpp rospy std_msgs message_runtime #message_generation
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 ###########
