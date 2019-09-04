@@ -16,6 +16,7 @@ from yolo_v3.msg  import ROI_array
 from yolo_v3.msg  import ROI  
 from comm_stm32   import Gripper
 from speech.msg   import SR
+from strategy.msg import speech_status
 
 count   = 0
 
@@ -50,10 +51,12 @@ class stockingTask:
                 self.en_sim = rospy.get_param('self.en_sim')
         self.img_data = ROI()
         self.img_data_list = []
-        self.check = SR()
         self.speech_obj_name = ' '
+        self.check = SR()
         self.check.speech_check = 0
         self.check.confirm = 0
+        self.speech = speech_status()
+        self.speech.status = 0
         self.name = _name
         self.state = initPose
         self.nowState = initPose 
@@ -115,6 +118,8 @@ class stockingTask:
             self.nextState = wait_speech_recognition
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi) 
             self.check.speech_check = 0 
+            self.speech.status = 1
+            
 
         elif self.state == wait_speech_recognition:
             print('self.state == wait_speech_recognition')
@@ -128,10 +133,12 @@ class stockingTask:
                     self.speech_obj_name = 'mouse'
                 self.nextState = wait_img_pos
                 self.No_Object_count = 0
+                self.check.confirm = 0
                 print('catch ' + self.speech_obj_name)
                 rospy.sleep(1)
             else:
                 print('wait speech_check')
+                speech_status_pub.publish(self.speech)
                 self.nextState = wait_speech_recognition
                 
 
@@ -150,11 +157,16 @@ class stockingTask:
                             print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
                             self.obj_name = self.img_data.object_name
                             # self.nextState = move_to_obj
+                            global x,y
                             x = (self.img_data.min_x + self.img_data.Max_x)/2
                             y = (self.img_data.min_y + self.img_data.Max_y)/2
                             self.move_to_obj(x, y)
                             time.sleep(1)
+
+                            self.speech.status = 2
+
                             while self.check.confirm == 0:
+                                speech_status_pub.publish(self.speech)
                                 rospy.sleep(.1)
                             if self.check.confirm == 1:
                                 print('get this')
@@ -225,7 +237,7 @@ class stockingTask:
             print('self.state == pickObject')
             self.state = busy
             self.nextState = up 
-            self.suction.gripper_vaccum_on()
+            # self.suction.gripper_vaccum_on()
             rospy.sleep(1)
             # if 'lunchbox' in objectName[self.pickList]:
             #     self.arm.set_speed(30)
@@ -257,14 +269,12 @@ class stockingTask:
             print('self.state == placeObject')
             self.state = busy
             self.nextState = initPose
-            self.suction.gripper_vaccum_off()
+            # self.suction.gripper_vaccum_off()
             rospy.sleep(1)
 
     #-------------------------移動物件------------------------------------------------------
     def move_to_obj(self, x, y):
-        global x
-        global y
-        print("move to xy = [ " + str([x,y]) " ]")
+        print("move to xy = [ " + str([x,y]) + " ]")
         self.arm.set_speed(self.faster_speed)
         posX , posY = self.Image_transform(x, y)
         self.state = busy
@@ -313,6 +323,8 @@ if __name__ == '__main__':
 
     rate = rospy.Rate(50)
 
+    speech_status_pub = rospy.Publisher("/speech/status", speech_status, queue_size=10)
+    
     while not rospy.is_shutdown():
         try:
             left.process()
