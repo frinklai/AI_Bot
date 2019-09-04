@@ -34,6 +34,7 @@ add_service_files(
   FILES
   GetJointPose.srv
   GetKinematicsPose.srv
+  GetAdaptiveLine.srv
 )
 
 generate_messages(
