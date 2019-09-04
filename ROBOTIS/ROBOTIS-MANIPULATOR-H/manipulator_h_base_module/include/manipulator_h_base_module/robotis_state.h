@@ -72,7 +72,7 @@ public:
   bool    is_inv;
   ManipulatorKinematicsDynamics  *IK_test;
   Eigen::Quaterniond ik_target_quaternion, inv_target_quaternion;
-  bool setInverseKinematics(int cnt, int all_steps, Eigen::MatrixXd start_rotation, double start_phi, Eigen::VectorXd Old_JointAngle);
+  bool setInverseKinematics(int cnt, int all_steps, Eigen::MatrixXd start_rotation, double start_phi, Eigen::VectorXd Old_JointAngle, bool Line_phi);
   Eigen::Quaterniond slerp(double t, Eigen::Quaterniond& self, Eigen::Quaterniond& other, bool inv);
 /************************************end*********************************/  
 };
