@@ -86,7 +86,7 @@ public:
                             Eigen::MatrixXd tar_orientation, Eigen::MatrixXd curr_orientation);
 
   bool inverseKinematics(int to, Eigen::MatrixXd tar_position, Eigen::MatrixXd tar_orientation,
-                         double tar_phi, double tar_slide_pos, bool is_p2p);
+                         double tar_phi, double tar_slide_pos, bool is_p2p, bool Line_Phi);
   bool inverseKinematics(int from, int to, Eigen::MatrixXd tar_position, Eigen::MatrixXd tar_orientation,
                          int max_iter, double ik_err);
   Eigen::MatrixXd Trans( double &Theta, Eigen::VectorXd &DH );
@@ -98,23 +98,22 @@ public:
   static Eigen::MatrixXd rotation2rpy( Eigen::MatrixXd rotation );
   void load_LinkParam();
   void getPhiAngle();
-//  double est_joint_limit_degree(double max_limit, double min_limit, double curr_angle);
-//  double est_wrist_singularity_degree(double Joint2, double Joint6);
+  double est_joint_limit_degree(double max_limit, double min_limit, double curr_angle);
+  double est_wrist_singularity_degree(double Joint2, double Joint6);
   /*****************new_fuction****************/
   bool InverseKinematics_p2p( Eigen::VectorXd position, Eigen::Matrix3d rotation, double phi, 
-                            double slide_position, Eigen::VectorXd Old_JointAngle, bool is_p2p);
+                            double slide_position, Eigen::VectorXd Old_JointAngle, bool is_p2p, bool Line_Phi);
   bool limit_check(Eigen::Vector3d goal_position, Eigen::Matrix3d rotation);
   inline double get_d4(){return d4;};
   /********************end*********************/
 //++
   bool do_wirst_avoid;
   void get_WirstAvoid(bool is_wirst);
-
   // for estimate joint limit
   
 
-//  Eigen::VectorXd JointAngle_for_est_lmt;
-//  bool is_est_joint_limit;  // if true, the result of kinematics will not be send to motor.
+  Eigen::VectorXd JointAngle_for_est_lmt;
+  bool is_est_joint_limit;  // if true, the result of kinematics will not be send to motor.
 
 };
 
