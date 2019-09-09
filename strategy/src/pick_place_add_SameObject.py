@@ -152,8 +152,8 @@ class stockingTask:
                     print("----- stra detect object_" + str(i) + " ----- ")
                     print("object_name = " + str(self.img_data_list[i].object_name))
                     print("score = " + str(self.img_data_list[i].score))
-                    print("min_xy = [ " +  str( [self.img_data_list[i].min_x, self.img_data.min_y] ) +  " ]" )
-                    print("max_xy = [ " +  str( [self.img_data_list[i].Max_x, self.img_data.Max_y] ) +  " ]" )
+                    print("min_xy = [ " +  str( [self.img_data_list[i].min_x, self.img_data_list[i].min_y] ) +  " ]" )
+                    print("max_xy = [ " +  str( [self.img_data_list[i].Max_x, self.img_data_list[i].Max_y] ) +  " ]" )
                     self.obj_name = self.img_data.object_name
                     # self.nextState = move_to_obj
                     global x,y
