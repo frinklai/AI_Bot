@@ -145,48 +145,52 @@ class stockingTask:
         elif self.state == wait_img_pos:        # wait_img_pos
             print('self.state == wait_img_pos')
             self.state = busy
-        
-            if(len(self.img_data_list)!=0):
-                for i in range(len(self.img_data_list)):
-                    if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):
-                        if self.speech_obj_name == self.img_data.object_name:
-                            print("----- stra detect object_" + str(i) + " ----- ")
-                            print("object_name = " + str(self.img_data.object_name))
-                            print("score = " + str(self.img_data.score))
-                            print("min_xy = [ " +  str( [self.img_data.min_x, self.img_data.min_y] ) +  " ]" )
-                            print("max_xy = [ " +  str( [self.img_data.Max_x, self.img_data.Max_y] ) +  " ]" )
-                            self.obj_name = self.img_data.object_name
-                            # self.nextState = move_to_obj
-                            global x,y
-                            x = (self.img_data.min_x + self.img_data.Max_x)/2
-                            y = (self.img_data.min_y + self.img_data.Max_y)/2
-                            self.move_to_obj(x, y)
-                            time.sleep(1)
+            self.cnt = 0
+            for i in range(len(self.img_data_list)):
+                # if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):
+                if self.speech_obj_name == self.img_data.object_name:
+                    print("----- stra detect object_" + str(i) + " ----- ")
+                    print("object_name = " + str(self.img_data_list[i].object_name))
+                    print("score = " + str(self.img_data_list[i].score))
+                    print("min_xy = [ " +  str( [self.img_data_list[i].min_x, self.img_data.min_y] ) +  " ]" )
+                    print("max_xy = [ " +  str( [self.img_data_list[i].Max_x, self.img_data.Max_y] ) +  " ]" )
+                    self.obj_name = self.img_data.object_name
+                    # self.nextState = move_to_obj
+                    global x,y
+                    x = (self.img_data_list[i].min_x + self.img_data_list[i].Max_x)/2
+                    y = (self.img_data_list[i].min_y + self.img_data_list[i].Max_y)/2
+                    self.move_to_obj(x, y)
+                    time.sleep(1)
 
-                            self.speech.status = 2
+                    self.speech.status = 2
 
-                            while self.check.confirm == 0:
-                                speech_status_pub.publish(self.speech)
-                                rospy.sleep(.1)
-                            if self.check.confirm == 1:
-                                print('get this')
-                                self.nextState = down
-                                break
-                            elif self.check.confirm == 2:
-                                print('not this')
-                                self.check.confirm = 0
-                        else:
-                            print('not this object')
-                            self.No_Object_count += 1
-                    else:
-                        print('object over range!!')
-            else:
+                    while self.check.confirm == 0:
+                        speech_status_pub.publish(self.speech)
+                        rospy.sleep(.1)
+                    if self.check.confirm == 1:
+                        print('get this')
+                        self.nextState = down
+                        break
+                    elif self.check.confirm == 2:
+                        print('not this')
+                        self.check.confirm = 0
+                        if i == (len(self.img_data_list)) - 1:
+                            self.nextState = initPose
+                            break
+                else:
+                    print('not this object')
+                    self.No_Object_count += 1
+                    break
+                # else:
+                #     print('object over range!!')
+            if(len(self.img_data_list) == 0):
                 print('no object!!!')
                 self.nextState = wait_img_pos
                 self.No_Object_count += 1
             if self.No_Object_count == 100:      #判斷桌上沒有此物件
                 self.nextState = initPose
                 self.No_Object_count = 0
+                self.speech.status = 0
                 print('沒有此物件')
                 rospy.sleep(2)
                 # self.close_box = True                          
@@ -262,7 +266,6 @@ class stockingTask:
             self.pos   = [0.4, 0.5, -0.3]
             self.euler = [0, 0, 0]
             self.phi = 0
-            self.nextState = placeObject
             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi) 
 
         elif self.state == placeObject:
@@ -313,6 +316,13 @@ class stockingTask:
             self.img_data.Max_x = data.ROI_list[i].Max_x
             self.img_data.Max_y = data.ROI_list[i].Max_y
             return self.img_data
+
+            self.img_data_list[i].object_name = data.ROI_list[i].object_name
+            self.img_data_list[i].score       = data.ROI_list[i].score
+            self.img_data_list[i].min_x = data.ROI_list[i].min_x
+            self.img_data_list[i].min_y = data.ROI_list[i].min_y
+            self.img_data_list[i].Max_x = data.ROI_list[i].Max_x
+            self.img_data_list[i].Max_y = data.ROI_list[i].Max_y
 
 
 if __name__ == '__main__':
