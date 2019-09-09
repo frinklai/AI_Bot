@@ -3,7 +3,7 @@
 
 import speech_recognition as sr
 import time
-# import os
+import os
 # import re
 # ros
 import rospy
@@ -99,9 +99,8 @@ if __name__ == '__main__':
                 elif check.confirm != 0:
                     speech.status = 0
 
-            for i in range(2):
-                speech_recognition_pub.publish(check)
-                rospy.sleep(1)
+            speech_recognition_pub.publish(check)
+            rospy.sleep(1)
 
     except rospy.ROSInterruptException:
         pass
