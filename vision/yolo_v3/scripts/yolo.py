@@ -38,9 +38,9 @@ class YOLO(object):
     _defaults = {
         "model_path"  : pth.model_data_path + 'model_data/yolo.h5',
         "anchors_path": pth.model_data_path + 'model_data/yolo_anchors.txt',
-        "classes_path": pth.model_data_path + 'model_data/task_class.txt',
+        "classes_path": pth.model_data_path + 'model_data/aaa_class.txt',
 
-        "score" : 0.05,
+        "score" : 0.3,
         "iou" : 0.45,
         "model_image_size" : (416, 416),
         "gpu_num" : 1,
@@ -202,7 +202,7 @@ class YOLO(object):
 
 def detect_video(yolo, video_path, output_path=""):
     
-    rospy.Subscriber("/camera/image_color", rosimage, yolo.FLIR_Callback)
+    rospy.Subscriber("/camera/image_raw", rosimage, yolo.FLIR_Callback)
     
     while not rospy.is_shutdown():
         un_dst_img = cv.undistort(yolo.cv_image, yolo.mtx, yolo.dist, None, yolo.newcameramtx)
