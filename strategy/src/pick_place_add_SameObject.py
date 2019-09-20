@@ -68,6 +68,7 @@ class stockingTask:
         self.phi   = 0
         self.sucAngle = 0
         self.No_Object_count = 0
+        self.object_cnt = 0
         self.obj_name = ''
         self.standby_safeFlag = True 
         self.close_box = False             
@@ -112,7 +113,7 @@ class stockingTask:
             print('self.state == initPose')
             self.state = busy
             self.arm.set_speed(self.speed)
-            self.pos   = [0, 0.5, -0.5]
+            self.pos   = [0, 0.5, -0.505]
             self.euler = [0, 0, 0]
             self.phi = 0
             self.nextState = wait_speech_recognition
@@ -145,10 +146,14 @@ class stockingTask:
         elif self.state == wait_img_pos:        # wait_img_pos
             print('self.state == wait_img_pos')
             self.state = busy
-            self.cnt = 0
+            self.object_cnt = 0
+            if(len(self.img_data_list) == 0):
+                print('no object!!!')
+                self.nextState = wait_img_pos
+                self.No_Object_count += 1
             for i in range(len(self.img_data_list)):
-                if (self.img_data.min_x > 638) and (self.img_data.min_y > 156) and (self.img_data.Max_x < 1188) and (self.img_data.Max_y < 811):
-                    if self.speech_obj_name == self.img_data.object_name:
+                if (self.img_data_list[i].min_x > 638) and (self.img_data_list[i].min_y > 156) and (self.img_data_list[i].Max_x < 1188) and (self.img_data_list[i].Max_y < 811):
+                    if self.speech_obj_name == self.img_data_list[i].object_name:
                         print("----- stra detect object_" + str(i) + " ----- ")
                         print("object_name = " + str(self.img_data_list[i].object_name))
                         print("score = " + str(self.img_data_list[i].score))
@@ -176,27 +181,23 @@ class stockingTask:
                             self.check.confirm = 0
                             #防止攝影機出錯
                             self.arm.set_speed(self.speed)
-                            self.pos   = [0, 0.5, -0.5]
+                            self.pos   = [0, 0.5, -0.505]
                             self.euler = [0, 0, 0]
                             self.phi = 0
                             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
-                            rospy.sleep(8)
-                            if i == (len(self.img_data_list)) - 1:
-                                self.nextState = initPose
-                                break
+                            self.object_cnt += 1
+                            rospy.sleep(10)
+
                     else:
                         print('not this object')
-                        self.No_Object_count += 1
-                        break
+                        self.object_cnt += 1
                 else:
                     print('object over range!!')
                     self.No_Object_count += 1
-                    break
-            if(len(self.img_data_list) == 0):
-                print('no object!!!')
-                self.nextState = wait_img_pos
-                self.No_Object_count += 1
-            if self.No_Object_count == 100:      #判斷桌上沒有此物件
+                    print("min_xy = " +  str( [self.img_data_list[i].min_x, self.img_data_list[i].min_y] ) )
+                    print("max_xy = " +  str( [self.img_data_list[i].Max_x, self.img_data_list[i].Max_y] ) )
+                
+            if self.No_Object_count >= 100 or self.object_cnt == len(self.img_data_list):      #判斷桌上沒有此物件
                 self.nextState = initPose
                 self.No_Object_count = 0
                 self.speech.status = 0
@@ -236,7 +237,7 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = down_sec
-            self.pos   = [0, 0, -0.048]
+            self.pos   = [0, 0, -0.05]
             self.arm.relative_move_pose(mode='p2p', pos=self.pos)
             rospy.sleep(.1)
 
@@ -245,7 +246,7 @@ class stockingTask:
             self.arm.set_speed(self.speed)
             self.state = busy
             self.nextState = pickObject  
-            self.pos  = [0, 0, -0.048]
+            self.pos  = [0, 0, -0.05]
             self.arm.relative_move_pose(mode='p2p', pos=self.pos)
 
         elif self.state == pickObject:
@@ -266,7 +267,7 @@ class stockingTask:
             self.arm.set_speed(self.faster_speed)
             self.state = busy
             self.nextState = moveObject
-            self.pos   = [0, 0, 0.196]
+            self.pos   = [0, 0, 0.2]
             self.arm.relative_move_pose(mode='p2p', pos=self.pos)
 
 
@@ -294,7 +295,7 @@ class stockingTask:
         posX , posY = self.Image_transform(x, y)
         self.state = busy
         self.nextState = wait_img_pos
-        self.pos   = [round(posX, 4), round(posY, 4), -0.5]
+        self.pos   = [round(posX, 4), round(posY, 4), -0.505]
         # self.pos   = [0.3, 0.4, -0.5]
         print(self.pos)
         self.euler = [0, 0, 0]
@@ -303,9 +304,9 @@ class stockingTask:
 
     #-------------------------座標轉換------------------------------------------------------
     def Image_transform(self, Camera_Image_X, Camera_Image_Y):
-        Arm_posX = (866 - Camera_Image_Y)*0.000889 - 0.4795 - 0.0700
+        Arm_posX = (866 - Camera_Image_Y)*0.000889 - 0.4795 - 0.1300
         # Arm_posY = (974 - Camera_Image_X)*0.000859 + 0.3960 
-        Arm_posY = (974 - Camera_Image_X)*0.000662 + 0.388332
+        Arm_posY = (974 - Camera_Image_X)*0.000662 + 0.388332 -0.0080
         return Arm_posX, Arm_posY
 
 
@@ -320,22 +321,15 @@ class stockingTask:
         self.img_data = ROI()
         self.img_data_list = data.ROI_list
         #print("Detected object number = " + str(len(data.ROI_list)))
-        for i in range(len(data.ROI_list)):
-            #if (data.ROI_list[i].min_x > 400) and (data.ROI_list[i].min_y) > 20 and (data.ROI_list[i].Max_x < 1440) and (data.ROI_list[i].Max_y < 990):
-            self.img_data.object_name = data.ROI_list[i].object_name
-            self.img_data.score       = data.ROI_list[i].score
-            self.img_data.min_x = data.ROI_list[i].min_x
-            self.img_data.min_y = data.ROI_list[i].min_y
-            self.img_data.Max_x = data.ROI_list[i].Max_x
-            self.img_data.Max_y = data.ROI_list[i].Max_y
-            return self.img_data
-
-            self.img_data_list[i].object_name = data.ROI_list[i].object_name
-            self.img_data_list[i].score       = data.ROI_list[i].score
-            self.img_data_list[i].min_x = data.ROI_list[i].min_x
-            self.img_data_list[i].min_y = data.ROI_list[i].min_y
-            self.img_data_list[i].Max_x = data.ROI_list[i].Max_x
-            self.img_data_list[i].Max_y = data.ROI_list[i].Max_y
+        # for i in range(len(data.ROI_list)):
+        #     #if (data.ROI_list[i].min_x > 400) and (data.ROI_list[i].min_y) > 20 and (data.ROI_list[i].Max_x < 1440) and (data.ROI_list[i].Max_y < 990):
+        #     self.img_data.object_name = data.ROI_list[i].object_name
+        #     self.img_data.score       = data.ROI_list[i].score
+        #     self.img_data.min_x = data.ROI_list[i].min_x
+        #     self.img_data.min_y = data.ROI_list[i].min_y
+        #     self.img_data.Max_x = data.ROI_list[i].Max_x
+        #     self.img_data.Max_y = data.ROI_list[i].Max_y
+        #     return self.img_data
 
 
 if __name__ == '__main__':
