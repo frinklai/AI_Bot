@@ -186,7 +186,7 @@ class stockingTask:
                             self.phi = 0
                             self.arm.ikMove(mode= 'p2p', pos = self.pos, euler = self.euler, phi = self.phi)
                             self.object_cnt += 1
-                            rospy.sleep(10)
+                            rospy.sleep(7)
 
                     else:
                         print('not this object')
@@ -304,7 +304,7 @@ class stockingTask:
 
     #-------------------------座標轉換------------------------------------------------------
     def Image_transform(self, Camera_Image_X, Camera_Image_Y):
-        Arm_posX = (866 - Camera_Image_Y)*0.000889 - 0.4795 - 0.1300
+        Arm_posX = (866 - Camera_Image_Y)*0.000889 - 0.4795 - 0.1400
         # Arm_posY = (974 - Camera_Image_X)*0.000859 + 0.3960 
         Arm_posY = (974 - Camera_Image_X)*0.000662 + 0.388332 -0.0080
         return Arm_posX, Arm_posY
