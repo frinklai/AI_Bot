@@ -11,6 +11,7 @@ from speech.msg import SR
 from strategy.msg import speech_status
 name1 = " "
 name2 = " "
+catch = -1
 
 def SpeechRecog():
     #Record Audio
@@ -54,23 +55,25 @@ if __name__ == '__main__':
                 # print(speech.status)
             
             elif speech.status == 1:
-                # name1 = SpeechRecog()
-                name1 = input('抓什麼\n')
-                # name1 = "去抓寶特瓶"
-                catch = name1.find(u'抓')
+                print("\n抓什麼")
+                name1 = SpeechRecog()
+                # print(name1)
+                # name1 = input('抓什麼\n')
+                if name1 != None:
+                    catch = name1.find(u'抓')
                 if catch != -1:
                     cnt = catch + 1
                     for i in range(len(name1) - catch - 1):
-                        if name1[cnt+i] == '瓶':
-                            print('抓瓶子')
+                        if (name1[cnt+i] == '瓶') or (name1[cnt+i] == '塑' and name1[cnt+i+1] == '膠'):
+                            print('catch bottle')
                             check.speech_check = 1
                             break
-                        elif name1[cnt+i] == '手' and name1[cnt+i+1] == '機':
-                            print('抓手機')
+                        elif (name1[cnt+i] == '紙') or (name1[cnt+i] == '鋁' and name1[cnt+i+1] == '箔'):
+                            print('catch paper')
                             check.speech_check = 2
                             break
-                        elif name1[cnt+i] == '滑' and name1[cnt+i+1] == '鼠':
-                            print('抓滑鼠')
+                        elif (name1[cnt+i] == "鐵") or (name1[cnt+i] == '金' and name1[cnt+i+1] == '屬'):
+                            print('catch metal')
                             check.speech_check = 3
                             break
                     if check.speech_check == 0:
@@ -82,8 +85,11 @@ if __name__ == '__main__':
                     speech.status = 0
 
             elif speech.status == 2:
-                # name2 = SpeechRecog()
-                name2 = input('是or不是\n')
+                print('\n是or不是')
+                name2 = SpeechRecog()
+                if name2 == None:
+                    name2 = "不確定"
+                # name2 = input('是or不是\n')
                 for i in range(len(name2)):
                     if name2[i] == '是' or name2[i] == '對':
                         check.confirm = 1
